@@ -22,3 +22,13 @@ body {
   0% { transform: rotate(0deg); } 
   100% { transform: rotate(360deg); } 
 }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
