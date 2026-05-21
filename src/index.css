@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* We use standard CSS for the body now to avoid v4 @apply conflicts */
+body {
+  background-color: #f8fafc; /* bg-slate-50 */
+  color: #1e293b; /* text-slate-800 */
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.loader { 
+  border: 3px solid #f3f3f3; 
+  border-top: 3px solid #3b82f6; 
+  border-radius: 50%; 
+  width: 20px; 
+  height: 20px; 
+  animation: spin 1s linear infinite; 
+}
+
+@keyframes spin { 
+  0% { transform: rotate(0deg); } 
+  100% { transform: rotate(360deg); } 
+}
