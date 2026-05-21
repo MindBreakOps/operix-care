@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabaseClient';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
+import logo from '../../assets/logo.jpg';
 import { Mail, Lock, KeyRound, ShieldAlert, Activity, User, ArrowLeft, CheckCircle, ChevronRight } from 'lucide-react';
 
 export default function Login() {
