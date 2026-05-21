@@ -55,25 +55,46 @@ export default function Login() {
 	}
   };
 
-  // 3. Request Account (Sign Up)
+  // 3. EXACT PATIENT MATCH OR CREATE (NO AUTH CREATION)
   const handleSignUp = async (e) => {
 	e.preventDefault();
 	setLoading(true);
 	clearMessages();
-
-	const { error } = await supabase.auth.signUp({
-	  email,
-	  password,
-	  options: { data: { full_name: fullName } } 
-	});
-
-	if (error) {
-	  setErrorMsg(error.message);
-	} else {
-	  setSuccessMsg("Application submitted successfully! Please wait for System Administrator approval.");
-	  setMode('login'); 
+  
+	try {
+	  // STEP A: Match Exact Email
+	  const { data: existingPatient, error: searchError } = await supabase
+		.from('profiles')
+		.select('*')
+		.eq('email', email)
+		.maybeSingle();
+  
+	  if (searchError) throw searchError;
+  
+	  if (existingPatient) {
+		// MATCH FOUND: Route directly to their file
+		setSuccessMsg(`Match found for ${existingPatient.full_name}. Retrieving file...`);
+		// Example routing (change to your actual patient route):
+		// navigate(`/patient/${existingPatient.id}`);
+	  } else {
+		// NO MATCH: Insert Data Only (No Auth Account)
+		const { error: insertError } = await supabase
+		  .from('profiles')
+		  .insert([{ 
+			email: email,
+			full_name: fullName,
+			role: 'patient' 
+		  }]);
+  
+		if (insertError) throw insertError;
+		setSuccessMsg("New patient record created successfully in database.");
+		setMode('login'); 
+	  }
+	} catch (err) {
+	  setErrorMsg(err.message);
+	} finally {
+	  setLoading(false);
 	}
-	setLoading(false);
   };
 
   // 4. OTP: Request Code
@@ -130,11 +151,9 @@ export default function Login() {
 	  {/* MAIN AUTH CARD */}
 	  <div className="relative z-10 max-w-md w-full bg-white/80 dark:bg-slate-900/70 backdrop-blur-2xl p-8 sm:p-10 rounded-[2rem] border border-white/50 dark:border-slate-700/50 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)] transition-all duration-500">
 		
-		{/* BRAND HEADER */}
+		{/* BRAND HEADER WITH LOGO */}
 		<div className="text-center space-y-3 mb-8">
-		  <div className="inline-flex p-3.5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-600 dark:text-blue-400 rounded-2xl ring-1 ring-blue-100 dark:ring-blue-800/50 shadow-inner mb-2">
-			<Activity className="w-8 h-8" />
-		  </div>
+		  <img src={logo} alt="OPERIX Care Logo" className="w-20 h-20 object-contain mx-auto rounded-2xl shadow-sm" />
 		  <div>
 			<h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">OPERIX Care</h1>
 			<p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mt-1">Enterprise Health System</p>
@@ -211,14 +230,14 @@ export default function Login() {
 
 			  <div className="text-center pt-2">
 				<button onClick={() => { setMode('register'); clearMessages(); }} className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors">
-				  New personnel? <span className="text-blue-600 dark:text-blue-400 underline decoration-blue-300 dark:decoration-blue-800 underline-offset-4">Apply for Clearance</span>
+				  New personnel or patient? <span className="text-blue-600 dark:text-blue-400 underline decoration-blue-300 dark:decoration-blue-800 underline-offset-4">Apply for Clearance</span>
 				</button>
 			  </div>
 			</div>
 		  )}
 
 		  {/* ============================== */}
-		  {/* MODE: REGISTER (Request Acc)   */}
+		  {/* MODE: REGISTER / PATIENT MATCH */}
 		  {/* ============================== */}
 		  {mode === 'register' && (
 			<form onSubmit={handleSignUp} className="space-y-5">
@@ -230,33 +249,27 @@ export default function Login() {
 				</div>
 			  </div>
 			  <div className="space-y-1.5">
-				<label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Work Email</label>
+				<label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Email (Used for Match)</label>
 				<div className="relative group">
 				  <Mail className="w-4 h-4 absolute left-4 top-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
 				  <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="jane.doe@operix.com"/>
 				</div>
 			  </div>
-			  <div className="space-y-1.5">
-				<label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Create Security Key</label>
-				<div className="relative group">
-				  <Lock className="w-4 h-4 absolute left-4 top-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-				  <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400" placeholder="••••••••"/>
-				</div>
-			  </div>
+			  {/* NOTE: Password field removed because this mode no longer creates a login account */}
 			  
 			  <div className="flex gap-3 pt-2">
 				<button type="button" onClick={() => setMode('login')} className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl transition-colors shadow-sm">
 				  <ArrowLeft className="w-5 h-5" />
 				</button>
 				<button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">
-				  {loading ? 'Transmitting...' : 'Submit Clearance Request'}
+				  {loading ? 'Processing...' : 'Submit Profile Data'}
 				</button>
 			  </div>
 			</form>
 		  )}
 
 		  {/* ============================== */}
-		  {/* MODE: OTP REQUEST              */}
+		  {/* MODE: OTP REQUEST                */}
 		  {/* ============================== */}
 		  {mode === 'otp_req' && (
 			<form onSubmit={handleSendOTP} className="space-y-5">
@@ -280,7 +293,7 @@ export default function Login() {
 		  )}
 
 		  {/* ============================== */}
-		  {/* MODE: OTP VERIFY               */}
+		  {/* MODE: OTP VERIFY                 */}
 		  {/* ============================== */}
 		  {mode === 'otp_verify' && (
 			<form onSubmit={handleVerifyOTP} className="space-y-5">
@@ -306,7 +319,7 @@ export default function Login() {
 		  )}
 
 		  {/* ============================== */}
-		  {/* MODE: FORGOT PASSWORD          */}
+		  {/* MODE: FORGOT PASSWORD            */}
 		  {/* ============================== */}
 		  {mode === 'forgot' && (
 			<form onSubmit={handleResetPassword} className="space-y-5">

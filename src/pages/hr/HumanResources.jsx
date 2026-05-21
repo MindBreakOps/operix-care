@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabaseClient';
 import { 
   Users, FileText, Download, Eye, Upload, Calendar, ShieldAlert, 
-  Edit2, Save, X, Hash, ChevronLeft, ChevronRight, Fingerprint, Briefcase, Activity
+  Edit2, Save, X, Hash, ChevronLeft, ChevronRight, Fingerprint, Briefcase, Activity, User
 } from 'lucide-react';
 
 export default function HumanResources() {
@@ -15,6 +15,7 @@ export default function HumanResources() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false); // NEW: State for Face ID photo
   const [documents, setDocuments] = useState([]);
 
   // --- ATTENDANCE & ROSTER STATE ---
@@ -54,6 +55,26 @@ export default function HumanResources() {
 	if (error) alert("Error saving: " + error.message);
 	else { setEmployeeRecord(editForm); setIsEditing(false); }
 	setLoading(false);
+  };
+
+  // NEW: Face ID Photo Upload Handler
+  const handlePhotoUpload = async (e) => {
+	if (!e.target.files || e.target.files.length === 0 || !selectedEmployee) return;
+	setUploadingPhoto(true);
+	const file = e.target.files[0];
+	const filePath = `${selectedEmployee.id}/face_id.jpeg`; // Consistent path for Face ID
+
+	const { error } = await supabase.storage.from('employee_photos').upload(filePath, file, { upsert: true });
+	
+	if (!error) {
+	  const { data } = supabase.storage.from('employee_photos').getPublicUrl(filePath);
+	  // Update database with the public URL
+	  await supabase.from('employee_records').update({ profile_url: data.publicUrl }).eq('staff_id', selectedEmployee.id);
+	  openEmployeeFile(selectedEmployee); // Refresh data
+	} else {
+	  alert("Error syncing Face ID photo: " + error.message);
+	}
+	setUploadingPhoto(false);
   };
 
   const handleFileUpload = async (e) => {
@@ -215,18 +236,37 @@ export default function HumanResources() {
 				  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
 				  
 				  <div className="flex flex-col md:flex-row justify-between items-start gap-6 relative z-10">
-					<div>
-					  <button onClick={() => setSelectedEmployee(null)} className="lg:hidden text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-4 flex items-center gap-1 hover:underline"><ChevronLeft className="w-4 h-4"/> Back to Directory</button>
-					  
-					  <div className="flex flex-wrap items-center gap-3 mb-1">
-						<h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{selectedEmployee.full_name}</h2>
-						<span className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-500/20 dark:to-purple-500/20 text-indigo-800 dark:text-indigo-300 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ring-1 ring-indigo-200 dark:ring-indigo-500/30">
-						  {selectedEmployee.role}
-						</span>
+					<div className="flex items-center gap-5">
+					  {/* NEW: Face ID Profile Photo Display & Upload */}
+					  <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 shrink-0 shadow-inner group">
+						{employeeRecord?.profile_url ? (
+						  <img src={employeeRecord.profile_url} alt="Face ID Profile" className="w-full h-full object-cover" />
+						) : (
+						  <User className="w-10 h-10 m-5 text-slate-400" />
+						)}
+						{isEditing && (
+						  <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+							<Upload className="w-5 h-5 text-white mb-1" />
+							<span className="text-[9px] font-black uppercase text-white tracking-widest text-center px-1">Sync Photo</span>
+							<input type="file" accept="image/jpeg, image/png" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+						  </label>
+						)}
 					  </div>
-					  <p className="text-sm font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center gap-1.5">
-						<Fingerprint className="w-4 h-4 text-indigo-400"/> {selectedEmployee.pro_id || 'ID GENERATING...'}
-					  </p>
+					  
+					  <div>
+						<button onClick={() => setSelectedEmployee(null)} className="lg:hidden text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-4 flex items-center gap-1 hover:underline"><ChevronLeft className="w-4 h-4"/> Back to Directory</button>
+						
+						<div className="flex flex-wrap items-center gap-3 mb-1">
+						  <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{selectedEmployee.full_name}</h2>
+						  <span className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-500/20 dark:to-purple-500/20 text-indigo-800 dark:text-indigo-300 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ring-1 ring-indigo-200 dark:ring-indigo-500/30">
+							{selectedEmployee.role}
+						  </span>
+						</div>
+						<p className="text-sm font-black text-slate-500 mt-2 uppercase tracking-widest flex items-center gap-1.5">
+						  <Fingerprint className="w-4 h-4 text-indigo-400"/> {selectedEmployee.pro_id || 'ID GENERATING...'}
+						  {uploadingPhoto && <span className="text-indigo-600 dark:text-indigo-400 ml-2 animate-pulse">Syncing AI...</span>}
+						</p>
+					  </div>
 					</div>
 
 					{isEditing ? (
@@ -455,7 +495,7 @@ export default function HumanResources() {
 			   onClick={handlePublishRoster}
 			   disabled={loading}
 			   className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
-			 >
+			  >
 			   <Save className="w-4 h-4"/> {loading ? 'Transmitting to Server...' : 'Publish Master Roster'}
 			 </button>
 		  </div>

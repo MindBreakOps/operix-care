@@ -20,52 +20,53 @@ export default function FinanceDashboard() {
   const [assets, setAssets] = useState([]);
   const [expensesByCategory, setExpensesByCategory] = useState({});
   
+  
   const [assetForm, setAssetForm] = useState({ name: '', category: 'Medical Equipment', value: '' });
   const [transForm, setTransForm] = useState({ type: 'expense', category: 'General', amount: '', description: '' });
 
-  const fetchFinanceData = async (isManual = false) => {
-	if (isManual) setIsRefreshing(true);
-	else setLoading(true);
-
-	// 1. Clinical Revenue
-	const { data: tickets } = await supabase.from('tickets').select('consultation_fee');
-	const ticketRev = tickets ? tickets.reduce((sum, t) => sum + (parseFloat(t.consultation_fee) || 0), 0) : 0;
-
-	// 2. Ledger Transactions
-	const { data: transData } = await supabase.from('transactions').select('*').order('transaction_date', { ascending: false });
-	
-	let manualRev = 0; let opExp = 0; let payrollExp = 0; let categoryMap = {};
-
-	if (transData) {
-	  transData.forEach(t => {
-		const amt = parseFloat(t.amount);
-		if (t.type === 'income') manualRev += amt;
-		else if (t.type === 'expense') {
-		  if (t.category.toLowerCase().includes('payroll')) payrollExp += amt;
-		  else opExp += amt;
-		  categoryMap[t.category] = (categoryMap[t.category] || 0) + amt;
-		}
+const fetchFinanceData = async (isManual = false) => {
+	  if (isManual) setIsRefreshing(true);
+	  else setLoading(true);
+  
+	  // 1. Fetch Attendance JOINED with Employee Records to get rates
+	  const { data: attendanceData } = await supabase
+		.from('attendance')
+		.select(`
+		  hours_worked,
+		  staff_id,
+		  employee_records(hourly_rate),
+		  profiles(full_name)
+		`);
+  
+	  // Calculate dynamic payroll based on hours worked
+	  let payrollExp = 0;
+	  if (attendanceData) {
+		attendanceData.forEach(entry => {
+		  const rate = entry.employee_records?.hourly_rate || 0;
+		  const hours = entry.hours_worked || 0;
+		  payrollExp += (rate * hours);
+		});
+	  }
+  
+	  // 2. Fetch Transactions (Existing logic...)
+	  const { data: transData } = await supabase.from('tickets').select('*');
+	  let opExp = 0;
+	  transData?.forEach(t => { if (t.type === 'expense') opExp += parseFloat(t.amount); });
+  
+	  // 3. Clinical Revenue (Existing logic...)
+	  const { data: tickets } = await supabase.from('tickets').select('total_bill');
+	  const revenue = tickets ? tickets.reduce((sum, t) => sum + (parseFloat(t.total_bill) || 0), 0) : 0;
+  
+	  setMetrics({ 
+		revenue: revenue, 
+		operatingExpenses: opExp, 
+		payrollExpenses: payrollExp,
+		assetValue: 0 
 	  });
-	}
-
-	// 3. Capital Assets
-	const { data: assetData } = await supabase.from('assets').select('*').order('purchase_date', { ascending: false });
-	const totalAssetVal = assetData ? assetData.reduce((sum, a) => sum + parseFloat(a.purchase_value), 0) : 0;
-
-	setMetrics({ 
-	  revenue: ticketRev + manualRev, 
-	  operatingExpenses: opExp, 
-	  payrollExpenses: payrollExp, 
-	  assetValue: totalAssetVal 
-	});
-	
-	setTransactions(transData || []);
-	setAssets(assetData || []);
-	setExpensesByCategory(categoryMap);
-	
-	setLoading(false);
-	setIsRefreshing(false);
-  };
+	  
+	  setLoading(false);
+	  setIsRefreshing(false);
+	};
 
   useEffect(() => { fetchFinanceData(); }, []);
 
