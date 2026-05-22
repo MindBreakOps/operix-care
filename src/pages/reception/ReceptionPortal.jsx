@@ -68,7 +68,7 @@ export default function ReceptionDashboard() {
   const [patientsList, setPatientsList] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [newAppt, setNewAppt] = useState({ patient_id: '', doctor_id: '', date: '', time: '', reason: '' });
-
+  const [booking, setBooking] = useState(false);
   const fetchAppointmentsData = async () => {
 	setLoading(true);
 	if (['admin', 'receptionist'].includes(role)) {
