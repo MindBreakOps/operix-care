@@ -83,10 +83,9 @@ export default function AppLayout() {
 			<div className="text-sm font-bold text-white truncate">{profile?.full_name || 'Loading...'}</div>
 			<div className="flex items-center gap-2 mt-2">
 			  <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest px-2 py-0.5 rounded-md bg-blue-900/20">
-				{role?.toUpperCase() || '---'}
+				{role || '---'}
 			  </span>
 			  <span className="text-[10px] font-mono text-slate-400 border-l border-slate-600 pl-2">
-				{/* This will now show EMP-1234 or --- if not found */}
 				ID: {profile?.pro_id || '---'}
 			  </span>
 			</div>

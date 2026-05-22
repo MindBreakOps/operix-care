@@ -20,48 +20,42 @@ export default function NurseDashboard() {
   };
 
   // 1. LOOKUP BY MRN
-  const handleSearchMRN = async (e) => {
-	e.preventDefault();
-	if (!searchMrn.trim()) return;
-	
-	setLoading(true);
-	setActiveTicket(null);
-	setPatientProfile(null);
-	setMessage({ type: '', text: '' });
-
-	try {
-	  // Fetch Ticket
-	  const { data: ticket, error: ticketError } = await supabase
-		.from('tickets')
-		.select('*')
-		.eq('id', searchMrn.trim())
-		.single();
-
-	  if (ticketError || !ticket) throw new Error("Invalid MRN or Ticket not found.");
+const handleSearchMRN = async (e) => {
+	  e.preventDefault();
+	  if (!searchMrn.trim()) return;
 	  
-	  // FIXED: Look for 'triage_pending' instead of 'awaiting_triage'
-	  if (ticket.status !== 'triage_pending') {
-		throw new Error(`Ticket is currently at status: ${ticket.status.replace(/_/g, ' ')}. It is not in the Triage queue.`);
+	  setLoading(true);
+	  setMessage({ type: '', text: '' });
+  
+	  try {
+		// 1. Fetch Ticket
+		const { data: ticket, error: ticketError } = await supabase
+		  .from('tickets')
+		  .select('*')
+		  .eq('id', searchMrn.trim())
+		  .single();
+  
+		if (ticketError || !ticket) throw new Error("Invalid MRN or Ticket not found.");
+  
+		// REMOVED THE STATUS CHECK BLOCK ENTIRELY FOR DEBUGGING
+		console.log("DEBUG - Ticket Status from Database:", ticket.status); 
+  
+		// Fetch Patient Master Record
+		const { data: patient, error: patientError } = await supabase
+		  .from('patient_files')
+		  .select('*')
+		  .eq('id', ticket.patient_id)
+		  .single();
+  
+		setActiveTicket(ticket);
+		setPatientProfile(patient);
+		
+	  } catch (err) {
+		showMessage('error', err.message);
+	  } finally {
+		setLoading(false);
 	  }
-
-	  // Fetch Patient Master Record
-	  const { data: patient, error: patientError } = await supabase
-		.from('patient_files')
-		.select('*')
-		.eq('id', ticket.patient_id)
-		.single();
-
-	  if (patientError) throw new Error("Could not retrieve patient master file.");
-
-	  setActiveTicket(ticket);
-	  setPatientProfile(patient);
-	  
-	} catch (err) {
-	  showMessage('error', err.message);
-	} finally {
-	  setLoading(false);
-	}
-  };
+	};
 
   // 2. SUBMIT VITALS
   const handlePushToDoctor = async (e) => {
