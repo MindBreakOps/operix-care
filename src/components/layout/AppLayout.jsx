@@ -5,8 +5,9 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../config/supabaseClient';
 import logo from '../../assets/logo.jpg'; // Ensure path is correct
 import { 
-  LayoutDashboard, Stethoscope, FlaskConical, Activity, Settings, LogOut,
-  Users, ClipboardList, History, Droplet, Briefcase, HeartPulse, DollarSign 
+  LayoutDashboard, Users, HeartPulse, Stethoscope, 
+  FlaskConical, Activity, Droplet, History, Briefcase, DollarSign, 
+  Microscope, Settings, LogOut// <--- ADD THIS HERE!
 } from 'lucide-react';
 
 export default function AppLayout() {
@@ -59,6 +60,8 @@ export default function AppLayout() {
 	...(['admin', 'doctor', 'receptionist', 'nurse'].includes(userRole) ? [{ name: "Patient History", path: "/history", icon: History }] : []),
 	...(userRole === 'admin' ? [{ name: "Human Resources", path: "/hr", icon: Briefcase }] : []),
 	...(userRole === 'admin' ? [{ name: "Financial Controller", path: "/finance", icon: DollarSign }] : []),
+	...(['admin', 'pathologist', 'doctor'].includes(userRole) ? [{ name: "Medical Labs", path: "/pathology", icon: Microscope }] : []),
+	  ...(['admin', 'radiologist', 'doctor'].includes(userRole) ? [{ name: "Radiography", path: "/radiology", icon: Activity }] : []),
   ];
 
   const handleLogout = async () => {

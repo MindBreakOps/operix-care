@@ -12,6 +12,7 @@ import NursePortal from "./pages/nurse/NursePortal";
 import DoctorWorkspace from './pages/doctor/DoctorWorkspace';
 import ChemistPortal from './pages/chemist/ChemistPortal';
 import PatientPortal from './pages/patient/PatientPortal';
+import DiagnosticLab from './pages/DiagnosticLab'; // Adjust the path if you put it in a specific folder!
 
 // Advanced & Shared Modules
 import Appointments from './pages/shared/Appointments';
@@ -21,6 +22,7 @@ import BloodBank from "./pages/bloodbank/BloodBank";
 import HumanResources from './pages/hr/HumanResources';
 import FinanceDashboard from './pages/finance/FinanceDashboard';
 import Settings from './pages/settings/Settings';
+
 
 // Route Protector
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -53,6 +55,8 @@ function AppRoutes() {
         <Route path="/bloodbank" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}><BloodBank /></ProtectedRoute>} />
        <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin']}><HumanResources /></ProtectedRoute>} />
        <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin']}><FinanceDashboard /></ProtectedRoute>} />
+       <Route path="/pathology" element={<DiagnosticLab labTypeOverride="Pathology" />} />
+       <Route path="/radiology" element={<DiagnosticLab labTypeOverride="Radiology" />} />
         
         {/* Shared / Cross-Department Workflows */}
         <Route path="/appointments" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'receptionist']}><Appointments /></ProtectedRoute>} />
