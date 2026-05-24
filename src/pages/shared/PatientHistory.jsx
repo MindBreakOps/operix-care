@@ -3,10 +3,10 @@ import { supabase } from '../../config/supabaseClient';
 import { 
   Search, User, Activity, Scissors, 
   Paperclip, ShieldAlert, Download, UploadCloud, 
-  Clock, CheckCircle, HeartPulse, Stethoscope, Microscope, Users, ChevronLeft, ArrowRight, FolderOpen
+  Clock, CheckCircle, HeartPulse, Stethoscope, Microscope, Users, ChevronLeft, ArrowRight
 } from 'lucide-react';
 
-const GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwmd1QUqvJ9FNIGDXAgIFFXUoKip3yeEkQqzbugfJtUsK7YHj8Ma0eMxDl6lLDtzL8f/exec'; // Replace with your GAS API
+const GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwmd1QUqvJ9FNIGDXAgIFFXUoKip3yeEkQqzbugfJtUsK7YHj8Ma0eMxDl6lLDtzL8f/exec';
 
 export default function PatientHistory() {
   const [activeTab, setActiveTab] = useState('directory'); 
@@ -94,25 +94,41 @@ export default function PatientHistory() {
 	reader.onerror = error => reject(error);
   });
 
-  const handleUploadNewFile = async (e) => {
-	const file = e.target.files[0];
-	if (!file || !patientData) return;
-	setUploadingFile(true);
-	try {
-		const base64Data = await fileToBase64(file);
-		const gasResponse = await fetch(GAS_WEBHOOK_URL, { 
-			method: 'POST', body: JSON.stringify({ fileName: `DirectUpload_${patientData.id}_${file.name}`, mimeType: file.type, fileData: base64Data }) 
-		});
-		const gasData = await gasResponse.json();
-		if (!gasData.fileUrl) throw new Error("File hosting failed.");
-
-		await supabase.from('patient_files').insert([{ 
-			patient_id: patientData.id, file_name: file.name, file_type: file.type, file_url: gasData.fileUrl 
-		}]);
-		showSuccess('Document successfully added to patient timeline.');
-		loadPatientTimeline(patientData.id); 
-	} catch (err) { setError("Upload failed: " + err.message); } finally { setUploadingFile(false); }
-  };
+const handleUploadNewFile = async (e) => {
+	  const file = e.target.files[0];
+	  if (!file || !patientData) return;
+	  setUploadingFile(true);
+	  try {
+		  const base64Data = await fileToBase64(file);
+		  
+		  console.log("Sending to Google Apps Script...");
+		  const gasResponse = await fetch(GAS_WEBHOOK_URL, { 
+			  method: 'POST', 
+			  body: JSON.stringify({ 
+				fileName: `DirectUpload_${patientData.id}_${file.name}`, 
+				mimeType: file.type, 
+				fileData: base64Data 
+			  }) 
+		  });
+		  
+		  const gasData = await gasResponse.json();
+		  console.log("Google Apps Script Replied:", gasData); // <--- THIS WILL REVEAL THE ISSUE
+  
+		  if (gasData.error) throw new Error("Google Script Error: " + gasData.error);
+		  if (!gasData.fileUrl) throw new Error("File hosting failed. Missing fileUrl in response.");
+  
+		  await supabase.from('patient_files').insert([{ 
+			  patient_id: patientData.id, file_name: file.name, file_type: file.type, file_url: gasData.fileUrl 
+		  }]);
+		  showSuccess('Document successfully added to patient timeline.');
+		  loadPatientTimeline(patientData.id); 
+	  } catch (err) { 
+		  console.error("Upload process failed:", err);
+		  setError("Upload failed: " + err.message); 
+	  } finally { 
+		  setUploadingFile(false); 
+	  }
+	};
 
   return (
 	<>
@@ -189,6 +205,26 @@ export default function PatientHistory() {
 								<div className="flex justify-between border-b dark:border-slate-800 pb-2"><span className="text-slate-500 font-bold uppercase text-[10px]">Phone</span> <span className="font-black dark:text-white">{patientData.phone || 'N/A'}</span></div>
 							</div>
 						</div>
+
+						{/* ATTACHED RECORDS WEB UI */}
+						<div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl">
+						  <h3 className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-6"><Paperclip className="w-5 h-5 text-emerald-500"/> Attached Records</h3>
+						  <label className={`block w-full border-2 border-dashed ${uploadingFile ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' : 'border-slate-200 dark:border-slate-700 hover:border-emerald-400'} rounded-2xl p-6 text-center cursor-pointer mb-6`}>
+							  <input type="file" className="hidden" onChange={handleUploadNewFile} disabled={uploadingFile} />
+							  <UploadCloud className={`w-8 h-8 mx-auto mb-3 ${uploadingFile ? 'text-emerald-500 animate-bounce' : 'text-slate-400'}`}/>
+							  <div className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{uploadingFile ? 'Encrypting...' : 'Click to Upload'}</div>
+						  </label>
+						  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+							  {documents.map(doc => (
+								  <a key={doc.id} href={doc.file_url} target="_blank" rel="noreferrer" className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 hover:bg-white dark:hover:bg-slate-800 transition-all rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm group">
+									  <div className="overflow-hidden pr-4">
+										  <div className="truncate text-xs font-black text-slate-700 dark:text-slate-300 group-hover:text-emerald-600">{doc.file_name}</div>
+									  </div>
+									  <Download className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 flex-shrink-0"/>
+								  </a>
+							  ))}
+						  </div>
+						</div>
 					</div>
 
 					<div className="lg:col-span-2">
@@ -204,7 +240,19 @@ export default function PatientHistory() {
 													<div className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{event.visit_type} Visit</div>
 													<div className="text-[10px] font-black uppercase text-slate-400">{event._date.toLocaleDateString()}</div>
 												</div>
-												<div className="font-bold text-sm dark:text-white">{event.services_requested}</div>
+												<div className="font-bold text-sm dark:text-white mb-3">{event.services_requested}</div>
+												
+												<div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-3 border border-slate-100 dark:border-slate-800 mb-3 grid grid-cols-3 gap-2 font-mono text-xs font-bold text-slate-600 dark:text-slate-400">
+												  <div>BP: {event.blood_pressure || '-'}</div><div>HR: {event.heart_rate || '-'}</div><div>T: {event.temperature || '-'}</div>
+												</div>
+
+												{event.diagnosis && (
+													<div className="bg-indigo-50 dark:bg-indigo-900/10 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/50">
+														<div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Diagnosis</div>
+														<div className="font-bold text-sm dark:text-white mb-1">{event.diagnosis}</div>
+														<div className="text-xs text-slate-600 dark:text-slate-400 italic">Rx: {event.prescribed_meds || 'None'}</div>
+													</div>
+												)}
 											</div>
 										</div>
 									);
@@ -223,6 +271,19 @@ export default function PatientHistory() {
 											</div>
 										</div>
 									);
+									if (event._type === 'operation') return (
+									  <div key={`o-${event.id}`} className="relative flex items-start gap-6 group">
+										  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 text-red-600 shrink-0 relative z-10"><Scissors className="w-4 h-4" /></div>
+										  <div className="flex-1 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-red-100 dark:border-red-900/30">
+											  <div className="flex justify-between items-start mb-2">
+												<div className="font-black text-lg text-slate-900 dark:text-white mb-1">{event.operation_name}</div>
+												<div className="text-[10px] font-black uppercase text-slate-400 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded-md bg-white dark:bg-slate-900">{event._date.toLocaleDateString()}</div>
+											  </div>
+											  <div className="text-xs font-bold text-slate-500 mb-2">Status: <span className="uppercase text-red-600">{event.status.replace('_', ' ')}</span></div>
+											  {event.notes && <div className="text-sm text-slate-600 dark:text-slate-400 italic bg-white dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-800">{event.notes}</div>}
+										  </div>
+									  </div>
+								  );
 								})}
 							</div>
 						</div>
@@ -269,8 +330,8 @@ export default function PatientHistory() {
 			  </div>
 		   </div>
 
-		   <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Chronological Clinical Log</div>
-		   <table className="w-full text-left text-sm border-collapse border-2 border-slate-200 rounded-lg overflow-hidden">
+		   <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Detailed Clinical Log</div>
+		   <table className="w-full text-left text-sm border-collapse border-2 border-slate-200 rounded-lg overflow-hidden mb-8">
 			  <thead className="bg-slate-100">
 				<tr>
 				  <th className="p-3 border-b-2 border-slate-200 text-[10px] font-black uppercase text-slate-500 w-24">Date</th>
@@ -289,22 +350,38 @@ export default function PatientHistory() {
 					</td>
 					<td className="p-4 align-top">
 					  {evt._type === 'visit' && (
-						<div>
-						  <div className="font-bold mb-1">{evt.services_requested}</div>
-						  {evt.diagnosis && <div className="text-slate-600 italic">Dx: {evt.diagnosis}</div>}
-						  {evt.prescribed_meds && <div className="text-slate-600 italic">Rx: {evt.prescribed_meds}</div>}
+						<div className="space-y-3">
+						  <div><span className="font-bold text-slate-700">Services Billed:</span> {evt.services_requested}</div>
+						  
+						  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded border border-slate-200 text-xs">
+							<div><span className="font-bold text-slate-500">BP:</span> {evt.blood_pressure || 'N/A'}</div>
+							<div><span className="font-bold text-slate-500">HR:</span> {evt.heart_rate || 'N/A'}</div>
+							<div><span className="font-bold text-slate-500">Temp:</span> {evt.temperature || 'N/A'}</div>
+						  </div>
+
+						  {evt.diagnosis && <div><span className="font-bold text-slate-700">Physician Diagnosis:</span> <span className="italic text-slate-800">{evt.diagnosis}</span></div>}
+						  {evt.prescribed_meds && <div><span className="font-bold text-slate-700">Prescription (Rx):</span> <span className="italic text-slate-800">{evt.prescribed_meds}</span></div>}
 						</div>
 					  )}
+					  
 					  {evt._type === 'lab' && (
-						<div>
-						  <div className="font-bold mb-1">{evt.test_name}</div>
-						  <div className="text-slate-600 italic">{evt.result_notes || 'No analytical notes.'}</div>
+						<div className="space-y-2">
+						  <div className="font-bold text-base text-slate-900">{evt.test_name}</div>
+						  <div className="bg-slate-50 p-3 rounded border border-slate-200">
+							<span className="font-bold text-slate-700 block mb-1">Analytical Notes:</span>
+							<span className="italic text-slate-800 whitespace-pre-wrap">{evt.result_notes || 'No analytical notes provided.'}</span>
+						  </div>
 						</div>
 					  )}
+					  
 					  {evt._type === 'operation' && (
-						<div>
-						  <div className="font-bold mb-1">{evt.operation_name} ({evt.status.replace('_',' ')})</div>
-						  <div className="text-slate-600 italic">{evt.notes || 'No notes.'}</div>
+						<div className="space-y-2">
+						  <div className="font-bold text-base text-slate-900">{evt.operation_name}</div>
+						  <div><span className="font-bold text-slate-700">Final Status:</span> <span className="uppercase text-xs font-black text-red-600">{evt.status.replace('_',' ')}</span></div>
+						  <div className="bg-slate-50 p-3 rounded border border-slate-200">
+							<span className="font-bold text-slate-700 block mb-1">Surgical / Post-Op Notes:</span>
+							<span className="italic text-slate-800 whitespace-pre-wrap">{evt.notes || 'No operative notes attached.'}</span>
+						  </div>
 						</div>
 					  )}
 					</td>
@@ -312,6 +389,20 @@ export default function PatientHistory() {
 				))}
 			  </tbody>
 		   </table>
+
+		   {/* ATTACHED DOCUMENTS SUMMARY LIST */}
+		   <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 page-break-inside-avoid">External Document Archive</div>
+		   <div className="border-2 border-slate-200 rounded-xl p-4 bg-slate-50 mb-8 page-break-inside-avoid">
+			 {documents.length === 0 ? (
+			   <div className="text-slate-500 italic text-sm">No external files or scans have been uploaded to this patient's record.</div>
+			 ) : (
+			   <ul className="list-disc list-inside text-sm text-slate-800 space-y-1">
+				 {documents.map(doc => (
+				   <li key={doc.id}><span className="font-bold">{doc.file_name}</span> <span className="text-slate-400 text-xs ml-2">(Uploaded: {new Date(doc.created_at).toLocaleDateString()})</span></li>
+				 ))}
+			   </ul>
+			 )}
+		   </div>
 
 		   <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
 			  Confidential Medical Document • Generated via OPERIX Care System
