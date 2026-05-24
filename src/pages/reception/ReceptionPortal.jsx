@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../config/supabaseClient';
-import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../../config/supabaseClient'; // <--- Changed to ../../
+import { useAuth } from '../../contexts/AuthContext';
 import { toPng } from 'html-to-image';
 import { 
   Calendar, Clock, User, CheckCircle, ShieldAlert, 
