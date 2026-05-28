@@ -7,6 +7,7 @@ const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  // loading defaults to true so the app waits during the initial boot
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +24,6 @@ export const AuthProvider = ({ children }) => {
 		  
 		  if (error) {
 			console.error("Error fetching profile:", error);
-			// If we can't fetch the profile, log them out for safety
 			await supabase.auth.signOut();
 			setUser(null);
 			setRole(null);
@@ -39,25 +39,35 @@ export const AuthProvider = ({ children }) => {
 	  } catch (error) {
 		console.error("Auth check failed:", error);
 	  } finally {
-		// ALWAYS run this, even if the database crashes, so the white screen goes away!
+		// This clears the initial loading screen
 		setLoading(false);
 	  }
 	};
 
 	checkUser();
 
-	const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-	  setLoading(true);
+	// Listen for auth events (like signing in, out, or tab-focus token refreshes)
+	const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+	  // CRITICAL FIX: Do NOT put setLoading(true) here!
+	  // Doing so destroys the 'children' prop, causing a full app reload on tab focus.
+	  
 	  try {
 		if (session?.user) {
-		  const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-		  if (profile && (profile.status === 'pending' || profile.status === 'rejected')) {
-			await supabase.auth.signOut();
-			setUser(null);
-			setRole(null);
+		  // Optimization: Only re-fetch the profile if it's a brand new sign-in
+		  // We don't need to query the database again just because a token refreshed in the background
+		  if (event === 'SIGNED_IN') {
+			const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+			if (profile && (profile.status === 'pending' || profile.status === 'rejected')) {
+			  await supabase.auth.signOut();
+			  setUser(null);
+			  setRole(null);
+			} else {
+			  setUser(session.user);
+			  setRole(profile?.role || 'patient');
+			}
 		  } else {
+			// For token refreshes, just update the user object silently
 			setUser(session.user);
-			setRole(profile?.role || 'patient');
 		  }
 		} else {
 		  setUser(null);
@@ -65,9 +75,8 @@ export const AuthProvider = ({ children }) => {
 		}
 	  } catch (error) {
 		 console.error("State change error:", error);
-	  } finally {
-		 setLoading(false);
 	  }
+	  // CRITICAL FIX: No setLoading(false) here either, leave the global loading state alone.
 	});
 
 	return () => subscription.unsubscribe();
