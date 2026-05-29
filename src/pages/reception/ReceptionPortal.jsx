@@ -87,7 +87,10 @@ export default function ReceptionDashboard() {
 	setLoading(false);
   };
 
-  useEffect(() => { if (activeTab === 'appointments') fetchAppointmentsData(); }, [activeTab]);
+  // Fetch in the background ONCE when the component first loads
+useEffect(() => { 
+  fetchAppointmentsData(); 
+}, []); // <-- The empty array means "only do this once, never on tab switch"
 
   const handleRegisterPatient = async (e) => {
 	e.preventDefault();

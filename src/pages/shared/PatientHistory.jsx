@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext'; // <-- Imported useAuth
 import { 
   Search, User, Activity, Scissors, 
   Paperclip, ShieldAlert, Download, UploadCloud, 
   Clock, CheckCircle, HeartPulse, Stethoscope, Microscope, 
-  Users, ChevronLeft, ArrowRight, FileText, Loader2, Calendar, Phone, Droplet
+  Users, ChevronLeft, ArrowRight, FileText, Loader2, Calendar, Phone, Droplet,
+  Trash2 // <-- Added Trash2 icon
 } from 'lucide-react';
 
 const GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwmd1QUqvJ9FNIGDXAgIFFXUoKip3yeEkQqzbugfJtUsK7YHj8Ma0eMxDl6lLDtzL8f/exec';
 
 export default function PatientHistory() {
+  const { role } = useAuth(); // <-- Get the user's role
+
   const [activeTab, setActiveTab] = useState('directory'); 
   
   const [patientsDirectory, setPatientsDirectory] = useState([]);
@@ -24,6 +28,7 @@ export default function PatientHistory() {
   const [documents, setDocuments] = useState([]);
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const showSuccess = (msg) => {
 	setSuccessMsg(msg);
@@ -84,6 +89,55 @@ export default function PatientHistory() {
 	else loadPatientTimeline(directorySearch.trim());
   };
 
+  // --- NEW: Delete Patient Function ---
+const handleDeletePatient = async (e, patientId, patientName) => {
+	  e.stopPropagation(); // Prevents the chart from opening
+	  
+	  // 1. Verify Role
+	  if (role !== 'admin') {
+		alert("Access Denied: Only administrators can delete patient records.");
+		return;
+	  }
+  
+	  if (window.confirm(`WARNING: Are you sure you want to permanently delete the file for ${patientName}?\n\nThis action cannot be undone.`)) {
+		
+		const btn = e.currentTarget;
+		btn.style.opacity = '0.5'; // Visual feedback that it's working
+		
+		try {
+		  const { data, error: deleteError } = await supabase
+			.from('patient_files')
+			.delete()
+			.eq('id', patientId)
+			.select(); // <-- CRITICAL: Forces Supabase to return the deleted row
+  
+		  // Check 1: Hard database errors (like Foreign Key constraints)
+		  if (deleteError) {
+			console.error("Supabase Error:", deleteError);
+			alert(`Database Error: ${deleteError.message}\n(This usually means the patient still has tickets attached and the SQL cascading delete didn't apply).`);
+			return;
+		  }
+  
+		  // Check 2: Silent failures (like Row Level Security blocks)
+		  if (!data || data.length === 0) {
+			alert("Delete Blocked: The database prevented the deletion. (Usually caused by Row Level Security policies).");
+			return;
+		  }
+		  
+		  // Success! Remove from UI instantly
+		  setPatientsDirectory(prev => prev.filter(p => p.id !== patientId));
+		  setFilteredDirectory(prev => prev.filter(p => p.id !== patientId));
+		  
+		  showSuccess(`${patientName}'s file has been permanently deleted.`);
+  
+		} catch (err) {
+		  alert("Unexpected Error: " + err.message);
+		} finally {
+		  btn.style.opacity = '1'; 
+		}
+	  }
+	};
+
   const exportMasterRecordPDF = () => {
 	window.print();
   };
@@ -130,9 +184,6 @@ export default function PatientHistory() {
 
   return (
 	<>
-	  {/* ==================================================== */}
-	  {/* WEB UI (HIDDEN DURING PDF EXPORT) */}
-	  {/* ==================================================== */}
 	  <div className="print:hidden relative max-w-7xl mx-auto space-y-8 p-4 md:p-8 font-sans min-h-screen overflow-hidden">
 		
 		<div className="absolute top-[5%] right-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -160,7 +211,7 @@ export default function PatientHistory() {
 					className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-inner" 
 				  />
 				</div>
-				<button disabled={loading} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl transition-all active:scale-95 shadow-md shadow-blue-500/25 flex items-center justify-center gap-2">
+				<button disabled={loading || isDeleting} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl transition-all active:scale-95 shadow-md shadow-blue-500/25 flex items-center justify-center gap-2">
 				  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Lookup'}
 				</button>
 			</form>
@@ -222,10 +273,22 @@ export default function PatientHistory() {
 						  {p.blood_group || '?'}
 						</span>
 					  </td>
-					  <td className="px-6 py-4 text-right">
-						<button className="text-blue-600 font-bold text-xs uppercase flex items-center justify-end w-full group-hover:translate-x-1 transition-transform">
-						  Open Chart <ArrowRight className="w-4 h-4 ml-1.5"/>
-						</button>
+					  <td className="px-6 py-4">
+						<div className="flex items-center justify-end gap-4">
+						  {/* DELETE BUTTON - Only visible to admin */}
+						  {role === 'admin' && (
+							<button 
+							  onClick={(e) => handleDeletePatient(e, p.id, p.full_name)}
+							  className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+							  title="Delete Patient Record"
+							>
+							  <Trash2 className="w-4 h-4" />
+							</button>
+						  )}
+						  <button className="text-blue-600 font-bold text-xs uppercase flex items-center group-hover:translate-x-1 transition-transform">
+							Open Chart <ArrowRight className="w-4 h-4 ml-1.5"/>
+						  </button>
+						</div>
 					  </td>
 					</tr>
 				  ))}
@@ -337,7 +400,6 @@ export default function PatientHistory() {
 								<div className="space-y-8 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
 									{timelineEvents.map((event, index) => {
 										
-										// EVENT CARD RENDERERS
 										if (event._type === 'visit') return (
 											<div key={`v-${event.id}`} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
 												<div className="flex items-center justify-center w-12 h-12 rounded-full border-4 border-white dark:border-slate-900 bg-blue-100 text-blue-600 shrink-0 md:order-1 md:group-odd:-ml-6 md:group-even:-mr-6 z-10 shadow-sm transition-transform group-hover:scale-110">
