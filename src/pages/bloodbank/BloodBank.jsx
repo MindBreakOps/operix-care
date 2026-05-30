@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabaseClient';
 import { Droplet, AlertCircle, Plus, Minus, RefreshCcw, Activity, ShieldCheck } from 'lucide-react';
 
+// 1. IMPORT THE LANGUAGE HOOK
+import { useLanguage } from '../../contexts/LanguageContext';
+
 export default function BloodBank() {
+  // 2. INITIALIZE TRANSLATION FUNCTION
+  const { t } = useLanguage();
+
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -59,12 +65,12 @@ export default function BloodBank() {
 		<div>
 		  <div className="flex items-center gap-2 mb-1">
 			<div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-			<span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Live Inventory</span>
+			<span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('Live Inventory')}</span>
 		  </div>
 		  <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-			Blood Bank Operations
+			{t('Blood Bank Operations')}
 		  </h1>
-		  <p className="text-sm text-slate-500 font-medium mt-1">Enterprise hemotherapy dispensing and tracking.</p>
+		  <p className="text-sm text-slate-500 font-medium mt-1">{t('Enterprise hemotherapy dispensing and tracking.')}</p>
 		</div>
 		<button 
 		  onClick={() => fetchInventory(true)} 
@@ -72,14 +78,14 @@ export default function BloodBank() {
 		  className="group flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 disabled:opacity-50"
 		>
 		  <RefreshCcw className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 ${isRefreshing ? 'animate-spin text-red-500' : ''}`} />
-		  Sync Ledger
+		  {t('Sync Ledger')}
 		</button>
 	  </div>
 
 	  {loading ? (
 		<div className="flex flex-col items-center justify-center h-64 gap-4">
 		  <Droplet className="w-10 h-10 text-red-500/50 animate-bounce" />
-		  <p className="text-sm font-medium text-slate-500 animate-pulse">Accessing cold storage records...</p>
+		  <p className="text-sm font-medium text-slate-500 animate-pulse">{t('Accessing cold storage records...')}</p>
 		</div>
 	  ) : (
 		<div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -94,8 +100,8 @@ export default function BloodBank() {
 				  <Droplet className="w-7 h-7 text-red-600 dark:text-red-400 fill-red-500/20" />
 				</div>
 				<div>
-				  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Vault Capacity</div>
-				  <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{totalUnits} <span className="text-lg font-bold text-slate-400 tracking-normal">Units</span></div>
+				  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('Total Vault Capacity')}</div>
+				  <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{totalUnits} <span className="text-lg font-bold text-slate-400 tracking-normal">{t('Units')}</span></div>
 				</div>
 			  </div>
 			</div>
@@ -107,8 +113,8 @@ export default function BloodBank() {
 				  <AlertCircle className={`w-7 h-7 ${criticalShortages > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
 				</div>
 				<div>
-				  <div className={`text-[11px] font-black uppercase tracking-widest mb-1 ${criticalShortages > 0 ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400'}`}>Critical Shortages</div>
-				  <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{criticalShortages} <span className="text-lg font-bold text-slate-400 tracking-normal">Groups</span></div>
+				  <div className={`text-[11px] font-black uppercase tracking-widest mb-1 ${criticalShortages > 0 ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400'}`}>{t('Critical Shortages')}</div>
+				  <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{criticalShortages} <span className="text-lg font-bold text-slate-400 tracking-normal">{t('Groups')}</span></div>
 				</div>
 			  </div>
 			</div>
@@ -120,9 +126,9 @@ export default function BloodBank() {
 				  <ShieldCheck className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
 				</div>
 				<div>
-				  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">System Health</div>
+				  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('System Health')}</div>
 				  <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
-					{criticalShortages > 2 ? 'Action Required' : criticalShortages > 0 ? 'Monitor Levels' : 'Optimal'}
+					{criticalShortages > 2 ? t('Action Required') : criticalShortages > 0 ? t('Monitor Levels') : t('Optimal')}
 				  </div>
 				</div>
 			  </div>
@@ -148,7 +154,7 @@ export default function BloodBank() {
 					  <div>
 						<h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter drop-shadow-sm">{group.blood_type}</h2>
 						<div className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-500">
-						  <Activity className="w-3 h-3" /> {status.text}
+						  <Activity className="w-3 h-3" /> {t(status.text)}
 						</div>
 					  </div>
 					  <Droplet className={`w-8 h-8 ${group.units < 5 ? `text-${status.color}-500 fill-${status.color}-500/30 animate-pulse` : 'text-slate-200 dark:text-slate-700'}`} />
@@ -157,7 +163,7 @@ export default function BloodBank() {
 					<div className="mt-auto">
 					  <div className="flex justify-between items-end mb-2">
 						<span className="text-3xl font-black text-slate-800 dark:text-slate-100 leading-none">{group.units}</span>
-						<span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Units</span>
+						<span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t('Units')}</span>
 					  </div>
 					  
 					  {/* Visual Capacity Bar */}
@@ -177,13 +183,13 @@ export default function BloodBank() {
 					  disabled={group.units === 0}
 					  className="flex justify-center items-center gap-2 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-900 transition-all text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-widest active:scale-[0.97]"
 					>
-					  <Minus className="w-4 h-4" /> Dispense
+					  <Minus className="w-4 h-4" /> {t('Dispense')}
 					</button>
 					<button 
 					  onClick={() => updateUnits(group.blood_type, group.units, 1)}
 					  className="flex justify-center items-center gap-2 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 hover:text-red-600 dark:hover:text-red-400 transition-all text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-widest active:scale-[0.97]"
 					>
-					  <Plus className="w-4 h-4" /> Add
+					  <Plus className="w-4 h-4" /> {t('Add')}
 					</button>
 				  </div>
 

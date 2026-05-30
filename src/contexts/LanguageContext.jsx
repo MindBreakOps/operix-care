@@ -1,22 +1,469 @@
-// src/contexts/LanguageContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const translations = {
-  en: { 
-	settings: "System Settings", profile: "My Profile", prefs: "Preferences", security: "Security", lang: "Language", theme: "Interface Theme", save: "Save", logout: "Log Out",
-	nav_admin: "Command Center", nav_front: "Front Desk", nav_nurse: "Nursing Station", nav_doc: "Provider Workspace", nav_op: "Operating Board", nav_rx: "Pharmacy Queue", nav_hist: "Patient History", nav_appt: "Appointments", nav_myhealth: "My Health"
+  en: {
+    // English is the default fallback, so we keep this empty to save memory.
+    // If a key isn't in 'ar', the system safely returns the English string itself!
   },
   ar: { 
-	settings: "إعدادات النظام", profile: "ملفي الشخصي", prefs: "التفضيلات", security: "الأمان", lang: "اللغة", theme: "مظهر الواجهة", save: "حفظ", logout: "تسجيل خروج",
-	nav_admin: "مركز القيادة", nav_front: "الاستقبال", nav_nurse: "محطة التمريض", nav_doc: "مساحة الطبيب", nav_op: "لوحة العمليات", nav_rx: "صيدلية", nav_hist: "سجل المرضى", nav_appt: "المواعيد", nav_myhealth: "صحتي"
-  },
-  fr: { 
-	settings: "Paramètres", profile: "Mon Profil", prefs: "Préférences", security: "Sécurité", lang: "Langue", theme: "Thème", save: "Enregistrer", logout: "Déconnexion",
-	nav_admin: "Centre de Commande", nav_front: "Accueil", nav_nurse: "Station Infirmière", nav_doc: "Espace Médecin", nav_op: "Bloc Opératoire", nav_rx: "Pharmacie", nav_hist: "Dossier Patient", nav_appt: "Rendez-vous", nav_myhealth: "Ma Santé"
-  },
-  es: { 
-	settings: "Configuración", profile: "Mi Perfil", prefs: "Preferencias", security: "Seguridad", lang: "Idioma", theme: "Tema", save: "Guardar", logout: "Cerrar sesión",
-	nav_admin: "Centro de Mando", nav_front: "Recepción", nav_nurse: "Enfermería", nav_doc: "Espacio Médico", nav_op: "Quirófano", nav_rx: "Farmacia", nav_hist: "Historial Clínico", nav_appt: "Citas", nav_myhealth: "Mi Salud"
+    // ==========================================
+    // 1. GLOBAL, SIDEBAR & LAYOUT
+    // ==========================================
+    "settings": "إعدادات النظام",
+    "logout": "تسجيل خروج",
+    "Admin Console": "لوحة تحكم الإدارة",
+    "Front Desk": "الاستقبال",
+    "Nurse Station": "محطة التمريض",
+    "Doctor Workspace": "عيادة الطبيب",
+    "Pharmacy Unit": "الصيدلية",
+    "Operations OR": "غرفة العمليات",
+    "Blood Bank": "بنك الدم",
+    "Patient History": "سجلات المرضى",
+    "Human Resources": "الموارد البشرية",
+    "Financial Controller": "الإدارة المالية",
+    "Medical Labs": "المختبرات الطبية",
+    "Radiography": "الأشعة",
+    "Staff Record": "سجل الموظف",
+    "Loading...": "جاري التحميل...",
+    "Unassigned": "غير معين",
+    "Modules": "الوحدات",
+    "System User": "مستخدم النظام",
+    "Role:": "الصلاحية:",
+    "Terminate Session": "إنهاء الجلسة",
+    "Access Denied": "تم رفض الوصول",
+    "You do not have the required clinical clearance to view this portal.": "ليس لديك التصريح السريري المطلوب لعرض هذه البوابة.",
+    "Save": "حفظ",
+    "Cancel": "إلغاء",
+    "Edit": "تعديل",
+    "Delete": "حذف",
+    "Search": "بحث",
+    "Lookup": "بحث",
+    "Total": "الإجمالي",
+
+    // ==========================================
+    // 2. RECEPTION & FRONT DESK
+    // ==========================================
+    "Front Desk Operations": "عمليات الاستقبال",
+    "Reception Dashboard": "لوحة تحكم الاستقبال",
+    "Intake & Tickets": "تسجيل الدخول والتذاكر",
+    "Appointments List": "قائمة المواعيد",
+    "New Patient Enrollment": "تسجيل مريض جديد",
+    "Enter the required patient details to begin triage.": "أدخل بيانات المريض المطلوبة لبدء الفرز.",
+    "Personal Details": "البيانات الشخصية",
+    "Full Name": "الاسم الكامل",
+    "John Doe": "أحمد محمد",
+    "DOB": "تاريخ الميلاد",
+    "Sex": "الجنس",
+    "Select...": "اختر...",
+    "Male": "ذكر",
+    "Female": "أنثى",
+    "Contact & Medical": "التواصل والبيانات الطبية",
+    "Phone Number": "رقم الهاتف",
+    "Email Address": "البريد الإلكتروني",
+    "Blood Group": "فصيلة الدم",
+    "Unknown": "غير معروف",
+    "Proceed to Triage & Services": "المتابعة إلى الفرز والخدمات",
+    "Patient:": "المريض:",
+    "check": "كشف",
+    "appointment": "موعد",
+    "emergency": "طوارئ",
+    "Diagnostic Routing": "التوجيه التشخيصي",
+    "Pathology (Medical Lab)": "المختبر الطبي (الباثولوجي)",
+    "e.g. CBC Panel, Urine Analysis": "مثال: صورة دم كاملة، تحليل بول",
+    "Radiography (X-Ray/Scan)": "الأشعة (سينية / مقطعية)",
+    "e.g. Chest X-Ray, CT Scan": "مثال: أشعة سينية للصدر، أشعة مقطعية",
+    "If filled, an order will be sent directly to the technician's queue.": "في حال التعبئة، سيتم إرسال الطلب مباشرة إلى قائمة انتظار الفني.",
+    "Dynamic Pricing Services": "الخدمات والتسعير",
+    "SDG (Pound)": "جنيه سوداني (SDG)",
+    "USD ($)": "دولار أمريكي (USD)",
+    "SAR (﷼)": "ريال سعودي (SAR)",
+    "Physician Consultation": "استشارة طبيب",
+    "Blood Test (CBC, Panel)": "فحص دم",
+    "Radiology / X-Ray": "أشعة",
+    "Service Name": "اسم الخدمة",
+    "+ Add Custom Service Row": "+ إضافة خدمة مخصصة",
+    "Upfront Payment Required": "الدفع المسبق مطلوب",
+    "Card": "بطاقة بنكية",
+    "Cash": "نقدًا",
+    "Generate Ticket & Dispatch Orders": "إصدار التذكرة وإرسال الطلبات",
+    "Clinical Routing Ticket": "تذكرة التوجيه السريري",
+    "MRN": "رقم الملف",
+    "Patient Name": "اسم المريض",
+    "Requested Routing": "التوجيه المطلوب",
+    "Lab Orders Dispatched Systematically.": "تم إرسال طلبات المختبر آلياً.",
+    "Export Clinical Ticket": "تصدير التذكرة السريرية",
+    "Official Financial Receipt": "إيصال مالي رسمي",
+    "Billed To": "مفوتر إلى",
+    "Total Amount": "الإجمالي",
+    "Status:": "الحالة:",
+    "Export Itemized Receipt": "تصدير الفاتورة المفصلة",
+    "Schedule New Visit": "جدولة زيارة جديدة",
+    "Select Patient": "اختر المريض",
+    "-- Choose Patient --": "-- اختر المريض --",
+    "Assign Doctor": "تحديد الطبيب",
+    "-- Choose Doctor --": "-- اختر الطبيب --",
+    "Date": "التاريخ",
+    "Time Slot": "الوقت",
+    "Visit Reason": "سبب الزيارة",
+    "Brief description...": "وصف مختصر...",
+    "Scheduling...": "جاري الجدولة...",
+    "Confirm Appointment": "تأكيد الموعد",
+    "Upcoming Schedule": "المواعيد القادمة",
+    "Loading schedule...": "جاري تحميل الجدول...",
+    "No appointments scheduled.": "لا توجد مواعيد مجدولة.",
+    "Check-in Patient": "تسجيل حضور المريض",
+    "Patient Profile created. Proceed to Services.": "تم إنشاء ملف المريض. انتقل إلى الخدمات.",
+    "Ticket & Orders Generated Successfully!": "تم إصدار التذكرة والطلبات بنجاح!",
+    "Appointment scheduled!": "تمت جدولة الموعد!",
+    "Patient Checked In. Please generate routing ticket.": "تم تسجيل الحضور. يرجى إصدار التذكرة.",
+
+    // ==========================================
+    // 3. NURSE & TRIAGE
+    // ==========================================
+    "Nursing Operations": "عمليات التمريض",
+    "Triage & Vitals": "الفرز والعلامات الحيوية",
+    "Fast lookup MRN...": "بحث سريع برقم الملف...",
+    "Pending Triage Queue": "قائمة الفرز المعلقة",
+    "Refresh Queue": "تحديث القائمة",
+    "Queue is empty": "القائمة فارغة",
+    "MRN:": "رقم الملف:",
+    "Unknown Patient": "مريض غير معروف",
+    "Waited:": "مدة الانتظار:",
+    "mins": "دقائق",
+    "Age:": "العمر:",
+    "Unknown Age": "عمر غير معروف",
+    "Sex & Blood Type": "الجنس وفصيلة الدم",
+    "Medical History / Allergies": "التاريخ الطبي / الحساسية",
+    "No prior medical history on file.": "لا يوجد تاريخ طبي مسبق مسجل.",
+    "Front Desk Request": "طلب الاستقبال",
+    "← Cancel & Back to Queue": "← إلغاء والعودة للقائمة",
+    "Clinical Vitals Intake": "تسجيل العلامات الحيوية",
+    "Blood Pressure": "ضغط الدم",
+    "Heart Rate": "نبض القلب",
+    "Core Temp": "درجة الحرارة",
+    "Height": "الطول",
+    "Weight": "الوزن",
+    "Triage Observation Notes": "ملاحظات التمريض الأولية",
+    "Patient appears stable...": "حالة المريض مستقرة...",
+    "Clear for Doctor Examination": "اعتماد وتحويل لفحص الطبيب",
+    "Processing...": "جاري المعالجة...",
+
+    // ==========================================
+    // 4. DOCTOR WORKSPACE
+    // ==========================================
+    "Physician Operations": "عمليات الطبيب",
+    "Clinical Consultation": "الاستشارة السريرية",
+    "Scan override / Input MRN...": "بحث برقم الملف...",
+    "Fetch": "استدعاء",
+    "Active Consultation Waitlist": "قائمة انتظار الاستشارات",
+    "Re-sync Live Triage": "تحديث مباشر",
+    "All Clinical Queues Clear": "لا يوجد مرضى في الانتظار",
+    "Bypass Nurse": "تجاوز التمريض",
+    "Ready": "جاهز",
+    "MRN ID:": "رقم الملف:",
+    "Retrieving Encrypted File...": "جاري استرداد الملف المشفر...",
+    "None": "لا يوجد",
+    "Triage Vitals": "العلامات الحيوية للفرز",
+    "Nurse Bypassed": "تم تجاوز التمريض",
+    "BP": "الضغط",
+    "HR": "النبض",
+    "Temp": "الحرارة",
+    "Nurse Notes:": "ملاحظات التمريض:",
+    "No notes provided.": "لا توجد ملاحظات.",
+    "← Release File & Return to Waitlist": "← إغلاق الملف والعودة للقائمة",
+    "Examination & Diagnosis": "الفحص والتشخيص",
+    "Direct Entry: Missing Vitals": "إدخال مباشر: علامات حيوية مفقودة",
+    "Reported Symptoms": "الأعراض",
+    "Recording...": "جاري التسجيل...",
+    "Dictate": "إملاء صوتي",
+    "Physician Diagnosis": "تشخيص الطبيب",
+    "Prescribed Medications (Rx)": "الأدوية الموصوفة (الروشتة)",
+    "Sign off & Route to Pharmacy": "اعتماد وتحويل للصيدلية",
+    "RECORDING... SPEAK NOW": "جاري التسجيل... تحدث الآن",
+    "TAP TO DICTATE SYMPTOMS": "اضغط للتحدث (الأعراض)",
+    "TAP TO DICTATE DIAGNOSIS": "اضغط للتحدث (التشخيص)",
+    "TAP TO DICTATE PRESCRIPTION": "اضغط للتحدث (الوصفة)",
+    "Voice recognition is not supported in your browser.": "ميزة التعرف على الصوت غير مدعومة في متصفحك.",
+
+    // ==========================================
+    // 5. DIAGNOSTICS & LABS
+    // ==========================================
+    "Diagnostic Department": "قسم التشخيص",
+    "Radiography Lab": "قسم الأشعة",
+    "Medical Pathology": "المختبرات الطبية",
+    "Active Queue": "الطلبات النشطة",
+    "Upload Archive": "رفع الأرشيف",
+    "Search MRN, Name, Phone...": "ابحث بالاسم، الجوال، رقم الملف...",
+    "No matching orders found.": "لا توجد طلبات مطابقة.",
+    "Select an order from the queue": "اختر طلبًا من القائمة",
+    "Test:": "الفحص:",
+    "Clinical Observations & Results": "الملاحظات والنتائج السريرية",
+    "Enter analytical results, diagnosis findings, or ranges...": "أدخل النتائج التحليلية أو ملاحظات التشخيص...",
+    "Attach Report / Imagery (Optional)": "إرفاق تقرير / أشعة (اختياري)",
+    "Click to upload file": "اضغط لرفع ملف",
+    "Uploading & Finalizing...": "جاري الرفع والاعتماد...",
+    "Finalize & Send to Patient File": "اعتماد وإرسال لملف المريض",
+    "Historical Record Archive": "أرشيف السجلات التاريخية",
+    "Target Patient UUID": "المعرف الفريد للمريض (UUID)",
+    "Select Historic File": "اختر الملف التاريخي",
+    "Click to browse files": "اضغط لتصفح الملفات",
+    "Archiving to Patient File...": "جاري الأرشفة في ملف المريض...",
+    "Upload to Master Record": "رفع إلى السجل الرئيسي",
+    "You must provide notes or upload a result file.": "يجب كتابة ملاحظات أو رفع ملف النتيجة.",
+
+    // ==========================================
+    // 6. CHEMIST & PHARMACY
+    // ==========================================
+    "Pharmacy Operations": "عمليات الصيدلية",
+    "Chemist Portal": "بوابة الصيدلي",
+    "Dispensary & Billing": "الصرف والفوترة",
+    "Inventory": "المخزون",
+    "Scan or Enter MRN Ticket...": "أدخل رقم تذكرة المريض...",
+    "Enter MRN to begin dispensing": "أدخل رقم الملف لبدء الصرف",
+    "Physician Prescription (Rx)": "الوصفة الطبية (Rx)",
+    "No medications explicitly prescribed by doctor.": "لا توجد أدوية موصوفة صراحة من قبل الطبيب.",
+    "Inventory Lookup": "البحث في المخزون",
+    "Patient Cart": "سلة المريض",
+    "Cart is empty": "السلة فارغة",
+    "Final Bill": "الفاتورة النهائية",
+    "Pharmacist Instructions / Notes...": "تعليمات وملاحظات الصيدلي...",
+    "Checkout & Issue Receipt": "الدفع وإصدار الفاتورة",
+    "Edit Medication": "تعديل دواء",
+    "Add New Medication": "إضافة دواء جديد",
+    "Generic Name *": "الاسم العلمي *",
+    "Trading Name (Brand)": "الاسم التجاري",
+    "Tablet": "حبوب", "Capsule": "كبسولات", "Syrup": "شراب", "Injection": "حقن", "Cream": "مرهم", "Drops": "قطرات",
+    "Dosage (e.g. 500mg)": "الجرعة (مثل 500mg)",
+    "Manufacturer": "الشركة المصنعة",
+    "Country": "بلد المنشأ",
+    "Prod Date": "الإنتاج",
+    "Exp Date": "الانتهاء",
+    "Pricing Matrix": "مصفوفة التسعير",
+    "Update Item": "تحديث الدواء",
+    "Save Item": "حفظ الدواء",
+    "Master Inventory": "المخزون الرئيسي",
+    "Medication": "الدواء",
+    "Formula/Type": "التركيبة/النوع",
+    "Actions": "إجراءات",
+    "No items in inventory.": "لا توجد أصناف في المخزون.",
+    "Cart is empty. Add medications to dispense.": "السلة فارغة. أضف أدوية للصرف.",
+
+    // ==========================================
+    // 7. SURGICAL BOARD & OR
+    // ==========================================
+    "Operating Room": "غرفة العمليات",
+    "Surgical Board": "لوحة العمليات الجراحية",
+    "Book Procedure": "حجز عملية",
+    "Choose Patient...": "اختر المريض...",
+    "No Blood Data": "لا توجد فصيلة مسجلة",
+    "Choose Surgeon...": "اختر الجراح...",
+    "Dr.": "د.",
+    "Operation Name": "اسم العملية",
+    "Blood Units Required": "وحدات الدم المطلوبة",
+    "Surgical Notes": "ملاحظات جراحية",
+    "TAP TO DICTATE SURGICAL NOTES": "اضغط لإملاء الملاحظات الجراحية",
+    "Verify Blood & Schedule": "التحقق من الدم والجدولة",
+    "No active operations.": "لا توجد عمليات نشطة.",
+    "Pre-Op / Scheduled": "مجدولة / قبل العملية",
+    "Surgeon: Dr.": "الجراح: د.",
+    "REQUIRES": "تحتاج",
+    "UNITS": "وحدات",
+    "Commence Surgery": "بدء الجراحة",
+    "In Surgery": "في غرفة العمليات",
+    "Sign Off / Completed": "إتمام العملية",
+
+    // ==========================================
+    // 8. PATIENT HISTORY & RECORDS
+    // ==========================================
+    "Search Name, Phone, or MRN...": "ابحث بالاسم، الجوال، رقم الملف...",
+    "Registered Patients Directory": "دليل المرضى المسجلين",
+    "Patient Profile": "ملف المريض",
+    "Contact Details": "بيانات التواصل",
+    "Demographics": "البيانات الديموغرافية",
+    "Action": "إجراء",
+    "ID:": "الهوية:",
+    "N/A": "غير متوفر",
+    "?": "؟",
+    "Delete Patient Record": "حذف ملف المريض",
+    "Open Chart": "فتح السجل",
+    "No patient records found.": "لم يتم العثور على سجلات.",
+    "Try adjusting your search criteria.": "حاول تعديل معايير البحث.",
+    "Back to Directory": "العودة للدليل",
+    "Export PDF": "تصدير كملف PDF",
+    "DOB / Sex": "الميلاد / الجنس",
+    "Blood Type": "فصيلة الدم",
+    "Contact": "التواصل",
+    "External Records": "السجلات المرفقة",
+    "Click to Upload Document": "اضغط لرفع مستند",
+    "Encrypting & Uploading...": "جاري التشفير والرفع...",
+    "No Files Attached": "لا توجد ملفات مرفقة",
+    "Clinical Timeline": "الخط الزمني السريري",
+    "No clinical history recorded.": "لا يوجد تاريخ سريري مسجل.",
+    "Visit": "زيارة",
+    "Surgical Op": "عملية جراحية",
+    "Official Medical Record": "السجل الطبي الرسمي",
+    "Date Generated": "تاريخ الإصدار",
+    "Patient Demographics": "بيانات المريض",
+    "Preexisting History": "التاريخ الطبي السابق",
+    "None reported.": "لا يوجد.",
+    "Detailed Clinical Log": "السجل السريري المفصل",
+    "Event Type": "نوع الحدث",
+    "Clinical Details & Notes": "التفاصيل والملاحظات الطبية",
+    "Services Billed:": "الخدمات المفوترة:",
+    "BP:": "الضغط:",
+    "HR:": "النبض:",
+    "Temp:": "الحرارة:",
+    "Physician Diagnosis:": "تشخيص الطبيب:",
+    "Prescription (Rx):": "الوصفة (Rx):",
+    "Analytical Notes:": "النتائج التحليلية:",
+    "No analytical notes provided.": "لا توجد نتائج تحليلية.",
+    "Final Status:": "الحالة النهائية:",
+    "Surgical / Post-Op Notes:": "ملاحظات ما بعد الجراحة:",
+    "No operative notes attached.": "لا توجد ملاحظات جراحية مرفقة.",
+    "External Document Archive": "أرشيف المستندات الخارجية",
+    "No external files or scans have been uploaded to this patient's record.": "لم يتم رفع ملفات خارجية في سجل هذا المريض.",
+    "Confidential Medical Document • Generated via OPERIX Care System": "وثيقة طبية سرية • صادرة من نظام أوبريكس",
+
+
+    // ==========================================
+    // 9. FINANCE DASHBOARD
+    // ==========================================
+    "Live Financial Ledger": "دفتر الأستاذ المالي",
+    "Corporate Treasury": "الخزانة المالية",
+    "Compiling Records...": "جاري تجميع السجلات...",
+    "Gross Revenue": "إجمالي الإيرادات",
+    "Gross Payroll": "إجمالي الرواتب",
+    "Operating Exp": "مصروفات التشغيل",
+    "Net Income (P&L)": "صافي الربح (الأرباح والخسائر)",
+    "Log Transaction": "تسجيل معاملة",
+    "Type": "النوع",
+    "Liability / Exp": "مصروفات / التزامات",
+    "Revenue": "إيرادات",
+    "Currency": "العملة",
+    "Amount": "المبلغ",
+    "Category & Memo": "التصنيف والبيان",
+    "Category (e.g. IT, Legal)": "التصنيف (مثال: صيانة، قانوني)",
+    "Memo Description": "تفاصيل المعاملة",
+    "POST TO LEDGER": "ترحيل إلى دفتر الأستاذ",
+    "Master Ledger": "دفتر الأستاذ العام",
+    "Records": "سجلات",
+    "Original:": "الأصلي:",
+    "No transactions logged.": "لم يتم تسجيل أي معاملات.",
+
+    // ==========================================
+    // 10. HUMAN RESOURCES
+    // ==========================================
+    "Department of People": "إدارة الموارد البشرية",
+    "HR & Compliance Ops": "عمليات الموارد والامتثال",
+    "Staff Directory": "دليل الموظفين",
+    "Master Timesheet": "جدول الحضور والانصراف",
+    "Active Personnel": "الموظفون النشطون",
+    "PENDING": "قيد الانتظار",
+    "ID GENERATING...": "جاري إصدار الهوية...",
+    "Sync Photo": "تحديث الصورة",
+    "Save Profile": "حفظ الملف",
+    "Modify Record": "تعديل السجل",
+    "Compensation & Contracts": "التعويضات والعقود",
+    "Base Salary": "الراتب الأساسي",
+    "Housing Allowance": "بدل السكن",
+    "Transport Allowance": "بدل النقل",
+    "Gross Monthly Salary": "إجمالي الراتب الشهري",
+    "Employment Contract": "عقد العمل",
+    "Signed Contract Valid": "عقد معتمد",
+    "No Contract on File": "لا يوجد عقد",
+    "Syncing...": "جاري المزامنة...",
+    "Upload Contract": "رفع العقد",
+    "Job Offer Letter": "خطاب العرض الوظيفي",
+    "Offer Letter Accepted": "عرض مقبول",
+    "No Offer on File": "لا يوجد عرض",
+    "Upload Offer Letter": "رفع العرض",
+    "Education Level": "المستوى التعليمي",
+    "Not specified": "غير محدد",
+    "Routing / Bank Acc": "الحساب البنكي (الآيبان)",
+    "Pending Info": "في انتظار المعلومات",
+    "Contract Status": "حالة العقد",
+    "Active": "نشط",
+    "Probation": "فترة التجربة",
+    "Terminated": "منهي",
+    "Leave Allowance": "رصيد الإجازات",
+    "Days Rem.": "أيام متبقية",
+    "Biometric & Credential Compliance": "الامتثال الحيوي والوثائق",
+    "National ID / Passport": "الهوية الوطنية / الجواز",
+    "ID Number": "رقم الهوية",
+    "No Record": "لا يوجد سجل",
+    "Medical Practice License": "رخصة مزاولة المهنة",
+    "License Number": "رقم الرخصة",
+    "Unlicensed": "غير مرخص",
+    "Select a personnel record to decrypt <br/>and view secure information.": "اختر سجل الموظف لفك التشفير <br/>وعرض المعلومات السرية.",
+    "Morning": "صباحي (M)",
+    "Night": "مسائي (N)",
+    "Off": "راحة (O)",
+    "Leave": "إجازة (L)",
+    "Sick": "مرضي (S)",
+    "Personnel Roster": "جدول الموظفين",
+    "Medical Doctors": "الأطباء",
+    "Nursing Staff": "طاقم التمريض",
+    "Pharmacy & Chemists": "الصيادلة",
+    "Front Desk Reception": "الاستقبال",
+    "Management & Technical": "الإدارة والدعم الفني",
+    "Transmitting...": "جاري الإرسال...",
+    "Publish Master Roster": "نشر الجدول الرئيسي",
+    "Not Set": "غير محدد",
+    "Expired": "منتهي",
+    "Days Left": "أيام متبقية",
+    "Valid & Active": "ساري المفعول",
+
+    // ==========================================
+    // 11. ADMIN DASHBOARD
+    // ==========================================
+    "System Online": "النظام متصل",
+    "Command Center": "مركز القيادة",
+    "Enterprise Analytics & Access Control": "تحليلات المنشأة والتحكم بالصلاحيات",
+    "Refresh Data": "تحديث البيانات",
+    "Syncing Enterprise Data...": "مزامنة بيانات المنشأة...",
+    "Active Visits": "الزيارات النشطة",
+    "Pending Rx": "وصفات معلقة",
+    "Surgeries": "العمليات الجراحية",
+    "Total Patients": "إجمالي المرضى",
+    "Account Approvals": "طلبات الحسابات",
+    "Pending": "معلق",
+    "All caught up.": "لا توجد طلبات معلقة.",
+    "No Name Provided": "بدون اسم",
+    "Approve": "قبول",
+    "Reject": "رفض",
+    "Quick Portals": "بوابات سريعة",
+    "Triage & Check-In": "الفرز وتسجيل الحضور",
+    "Nursing": "التمريض",
+    "Log Vitals": "تسجيل العلامات الحيوية",
+    "Doctor": "الطبيب",
+    "Consultations": "الاستشارات الطبية",
+    "Pharmacy": "الصيدلية",
+    "Dispensary": "الصرف",
+    "Access & Security Registry": "سجل الوصول والأمان",
+    "Active Profiles": "ملف نشط",
+    "Personnel Identity": "هوية الموظف",
+    "System Role": "الصلاحية في النظام",
+    "Clearance Actions": "إجراءات التصريح",
+    "Registry is empty.": "السجل فارغ.",
+    "Full Name": "الاسم الكامل",
+    "Admin": "مدير النظام",
+    "Nurse": "ممرض",
+    "Receptionist": "استقبال",
+    "Chemist": "صيدلي",
+    "Patient": "مريض",
+    "Save Modifications": "حفظ التعديلات",
+    "Edit Profile": "تعديل الملف",
+    "Revoke Access": "سحب الصلاحيات",
+
+    // ==========================================
+    // 12. PATIENT PORTAL
+    // ==========================================
+    "My Health Records": "سجلاتي الصحية",
+    "Appointments": "مواعيدي",
+    "Active Rx": "أدويتي الحالية",
+    "Lab Results": "نتائج تحاليلي"
+    
+   
   }
 };
 
@@ -25,19 +472,26 @@ const LanguageContext = createContext();
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(localStorage.getItem('operix_lang') || 'en');
 
+  // Automatically flips the entire app layout left-to-right based on language!
   useEffect(() => {
-	localStorage.setItem('operix_lang', language);
-	document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    localStorage.setItem('operix_lang', language);
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
   }, [language]);
 
-  const t = (key) => translations[language][key] || key;
+  // The smart translation function:
+  // If english, return the key as-is.
+  // If arabic, try to find the translation. If missing, fail gracefully and just show the English text.
+  const t = (key) => {
+    if (language === 'en') return key;
+    return translations[language]?.[key] || key; 
+  };
 
   return (
-	<LanguageContext.Provider value={{ language, setLanguage, t }}>
-	  {children}
-	</LanguageContext.Provider>
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
   );
 }
 
-// THIS IS THE MISSING BINDING THAT CAUSED THE CRASH!
 export const useLanguage = () => useContext(LanguageContext);

@@ -3,16 +3,16 @@ import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../config/supabaseClient';
-import logo from '../../assets/logo.jpg'; // Ensure path is correct
+import logo from '../../assets/logo.jpg'; 
 import { 
   LayoutDashboard, Users, HeartPulse, Stethoscope, 
   FlaskConical, Activity, Droplet, History, Briefcase, DollarSign, 
-  Microscope, Settings, LogOut// <--- ADD THIS HERE!
+  Microscope, Settings, LogOut, Globe
 } from 'lucide-react';
 
 export default function AppLayout() {
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const location = useLocation();
   
   const [profile, setProfile] = useState(null);
@@ -20,22 +20,15 @@ export default function AppLayout() {
   useEffect(() => {
 	const fetchProfile = async () => {
 	  if (!user) return;
-	  
-	  // Fetch profile and employee records
-	  const { data, error } = await supabase
+	  const { data } = await supabase
 		.from('profiles')
-		.select(`
-		  full_name, 
-		  id,
-		  employee_records(pro_id)
-		`)
+		.select(`full_name, id, employee_records(pro_id)`)
 		.eq('id', user.id)
 		.single();
 	  
 	  if (data) {
 		setProfile({
 		  full_name: data.full_name,
-		  // Check if employee_records exists as an array or a single object
 		  pro_id: Array.isArray(data.employee_records) 
 			? data.employee_records[0]?.pro_id 
 			: data.employee_records?.pro_id
@@ -50,18 +43,18 @@ export default function AppLayout() {
   const userRole = role?.toLowerCase() || ''; 
   
   const navLinks = [
-	...(userRole === 'admin' ? [{ name: "Admin Console", path: "/", icon: LayoutDashboard }] : []),
-	...(['admin', 'receptionist'].includes(userRole) ? [{ name: "Front Desk", path: "/reception", icon: Users }] : []),
-	...(['admin', 'nurse'].includes(userRole) ? [{ name: "Nurse Station", path: "/nurse", icon: HeartPulse }] : []),
-	...(['admin', 'doctor'].includes(userRole) ? [{ name: "Doctor Workspace", path: "/doctor", icon: Stethoscope }] : []),
-	...(['admin', 'chemist'].includes(userRole) ? [{ name: "Pharmacy Unit", path: "/chemist", icon: FlaskConical }] : []),
-	...(['admin', 'doctor', 'nurse'].includes(userRole) ? [{ name: "Operations OR", path: "/operations", icon: Activity }] : []),
-	...(['admin', 'doctor', 'nurse', 'receptionist'].includes(userRole) ? [{ name: "Blood Bank", path: "/bloodbank", icon: Droplet }] : []),
-	...(['admin', 'doctor', 'receptionist', 'nurse'].includes(userRole) ? [{ name: "Patient History", path: "/history", icon: History }] : []),
-	...(userRole === 'admin' ? [{ name: "Human Resources", path: "/hr", icon: Briefcase }] : []),
-	...(userRole === 'admin' ? [{ name: "Financial Controller", path: "/finance", icon: DollarSign }] : []),
-	...(['admin', 'pathologist', 'doctor'].includes(userRole) ? [{ name: "Medical Labs", path: "/pathology", icon: Microscope }] : []),
-	  ...(['admin', 'radiologist', 'doctor'].includes(userRole) ? [{ name: "Radiography", path: "/radiology", icon: Activity }] : []),
+	...(userRole === 'admin' ? [{ name: t("Admin Console"), path: "/", icon: LayoutDashboard }] : []),
+	...(['admin', 'receptionist'].includes(userRole) ? [{ name: t("Front Desk"), path: "/reception", icon: Users }] : []),
+	...(['admin', 'nurse'].includes(userRole) ? [{ name: t("Nurse Station"), path: "/nurse", icon: HeartPulse }] : []),
+	...(['admin', 'doctor'].includes(userRole) ? [{ name: t("Doctor Workspace"), path: "/doctor", icon: Stethoscope }] : []),
+	...(['admin', 'chemist'].includes(userRole) ? [{ name: t("Pharmacy Unit"), path: "/chemist", icon: FlaskConical }] : []),
+	...(['admin', 'doctor', 'nurse'].includes(userRole) ? [{ name: t("Operations OR"), path: "/operations", icon: Activity }] : []),
+	...(['admin', 'doctor', 'nurse', 'receptionist'].includes(userRole) ? [{ name: t("Blood Bank"), path: "/bloodbank", icon: Droplet }] : []),
+	...(['admin', 'doctor', 'receptionist', 'nurse'].includes(userRole) ? [{ name: t("Patient History"), path: "/history", icon: History }] : []),
+	...(userRole === 'admin' ? [{ name: t("Human Resources"), path: "/hr", icon: Briefcase }] : []),
+	...(userRole === 'admin' ? [{ name: t("Financial Controller"), path: "/finance", icon: DollarSign }] : []),
+	...(['admin', 'pathologist', 'doctor'].includes(userRole) ? [{ name: t("Medical Labs"), path: "/pathology", icon: Microscope }] : []),
+	...(['admin', 'radiologist', 'doctor'].includes(userRole) ? [{ name: t("Radiography"), path: "/radiology", icon: Activity }] : []),
   ];
 
   const handleLogout = async () => {
@@ -73,20 +66,18 @@ export default function AppLayout() {
 	<div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans overflow-hidden transition-colors duration-300">
 	  <aside className="w-64 bg-slate-900 dark:bg-black text-slate-300 flex flex-col shrink-0 border-r border-slate-800 shadow-2xl">
 		
-		{/* Brand Header with Logo */}
 		<div className="h-20 flex items-center gap-3 px-6 bg-slate-950 border-b border-slate-800/50">
 		  <img src={logo} alt="OPERIX Care" className="w-10 h-10 object-contain rounded-lg" />
 		  <h2 className="font-black text-lg text-white tracking-tighter">OPERIX</h2>
 		</div>
 
-		{/* User Profile Badge */}
 		<div className="px-6 py-6">
 		  <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-			<div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Staff Record</div>
-			<div className="text-sm font-bold text-white truncate">{profile?.full_name || 'Loading...'}</div>
+			<div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{t('Staff Record')}</div>
+			<div className="text-sm font-bold text-white truncate">{profile?.full_name || t('Loading...')}</div>
 			<div className="flex items-center gap-2 mt-2">
 			  <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest px-2 py-0.5 rounded-md bg-blue-900/20">
-				{role || '---'}
+				{t(role) || '---'}
 			  </span>
 			  <span className="text-[10px] font-mono text-slate-400 border-l border-slate-600 pl-2">
 				ID: {profile?.pro_id || '---'}
@@ -108,7 +99,14 @@ export default function AppLayout() {
 		  })}
 		</nav>
 
-		<div className="p-4 border-t border-slate-800/50 space-y-1">
+		<div className="p-4 border-t border-slate-800/50 space-y-2">
+		  <button 
+			onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+			className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-black text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+		  >
+			<Globe className="w-5 h-5" /> 
+			{language === 'en' ? 'عربي (Switch to Arabic)' : 'English (Switch to English)'}
+		  </button>
 		  <Link to="/settings" className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${location.pathname === '/settings' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
 			<Settings className="w-5 h-5" /> {t('settings')}
 		  </Link>

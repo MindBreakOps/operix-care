@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'; // <-- ADDED useLanguage
 
 // Import Layout & Pages
 import AppLayout from './components/layout/AppLayout';
@@ -12,7 +12,7 @@ import NursePortal from "./pages/nurse/NursePortal";
 import DoctorWorkspace from './pages/doctor/DoctorWorkspace';
 import ChemistPortal from './pages/chemist/ChemistPortal';
 import PatientPortal from './pages/patient/PatientPortal';
-import DiagnosticLab from './pages/DiagnosticLab'; // Adjust the path if you put it in a specific folder!
+import DiagnosticLab from './pages/DiagnosticLab'; 
 
 // Advanced & Shared Modules
 import Appointments from './pages/shared/Appointments';
@@ -23,10 +23,11 @@ import HumanResources from './pages/hr/HumanResources';
 import FinanceDashboard from './pages/finance/FinanceDashboard';
 import Settings from './pages/settings/Settings';
 
-
 // Route Protector
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, role, loading } = useAuth();
+  const { t } = useLanguage(); // <-- Added for translation
+  
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="loader border-t-blue-600"></div></div>;
   if (!user) return <Navigate to="/login" />;
   if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/unauthorized" />;
@@ -35,10 +36,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function AppRoutes() {
   const { user, role } = useAuth();
+  const { t } = useLanguage(); // <-- Added for translation
 
   return (
     <Routes>
-      {/* If logged in, redirect to their specific dashboard, otherwise show Login screen */}
       <Route path="/login" element={user ? <Navigate to={`/${role}`} /> : <Login />} />
       <Route path="/" element={user ? <Navigate to={`/${role}`} /> : <Login />} />
 
@@ -53,10 +54,10 @@ function AppRoutes() {
         {/* Advanced Medical Modules */}
         <Route path="/operations" element={<ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse']}><OperationsBoard /></ProtectedRoute>} />
         <Route path="/bloodbank" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}><BloodBank /></ProtectedRoute>} />
-       <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin']}><HumanResources /></ProtectedRoute>} />
-       <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin']}><FinanceDashboard /></ProtectedRoute>} />
-       <Route path="/pathology" element={<DiagnosticLab labTypeOverride="Pathology" />} />
-       <Route path="/radiology" element={<DiagnosticLab labTypeOverride="Radiology" />} />
+        <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin']}><HumanResources /></ProtectedRoute>} />
+        <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin']}><FinanceDashboard /></ProtectedRoute>} />
+        <Route path="/pathology" element={<DiagnosticLab labTypeOverride="Pathology" />} />
+        <Route path="/radiology" element={<DiagnosticLab labTypeOverride="Radiology" />} />
         
         {/* Shared / Cross-Department Workflows */}
         <Route path="/appointments" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'receptionist']}><Appointments /></ProtectedRoute>} />
@@ -66,16 +67,15 @@ function AppRoutes() {
         {/* Patient Only Workflow */}
         <Route path="/patient" element={<ProtectedRoute allowedRoles={['patient']}><PatientPortal /></ProtectedRoute>} />
         
-        {/* Access Denied Page */}
+        {/* Access Denied Page - TRANSLATED! */}
         <Route path="/unauthorized" element={
           <div className="flex flex-col items-center justify-center h-[80vh] text-center space-y-4">
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white">Access Denied</h1>
-            <p className="text-slate-500 font-medium">You do not have the required clinical clearance to view this portal.</p>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white">{t('Access Denied')}</h1>
+            <p className="text-slate-500 font-medium">{t('You do not have the required clinical clearance to view this portal.')}</p>
           </div>
         } />
       </Route>
 
-      {/* Catch-all route */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
