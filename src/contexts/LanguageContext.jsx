@@ -149,7 +149,7 @@ const translations = {
     "Processing...": "جاري المعالجة...",
 
     // ==========================================
-    // 4. DOCTOR WORKSPACE
+    // 4. DOCTOR WORKSPACE & MEDICAL DICTIONARY
     // ==========================================
     "Physician Operations": "عمليات الطبيب",
     "Clinical Consultation": "الاستشارة السريرية",
@@ -184,6 +184,62 @@ const translations = {
     "TAP TO DICTATE DIAGNOSIS": "اضغط للتحدث (التشخيص)",
     "TAP TO DICTATE PRESCRIPTION": "اضغط للتحدث (الوصفة)",
     "Voice recognition is not supported in your browser.": "ميزة التعرف على الصوت غير مدعومة في متصفحك.",
+    
+    // --> Symptoms Dictation List
+    "Acute Chest Pain (Retrosternal, crushing)": "ألم حاد في الصدر (خلف القص، ضاغط)",
+    "Dyspnea on exertion (Shortness of breath)": "ضيق التنفس عند المجهود",
+    "Paroxysmal Nocturnal Dyspnea (PND)": "ضيق التنفس الليلي الانتيابي",
+    "Orthopnea (Difficulty breathing laying down)": "ضيق التنفس الاستلقائي",
+    "Productive Cough with purulent sputum": "سعال منتج مع بلغم صديدي",
+    "Hemoptysis (Coughing up blood)": "نفث الدم (سعال مصحوب بدم)",
+    "Palpitations (Irregular heartbeats)": "خفقان (ضربات قلب غير منتظمة)",
+    "Stridor and Wheezing": "صرير وأزيز بالصدر",
+    "Epigastric Pain (Burning, postprandial)": "ألم في رأس المعدة (حرقان، بعد الأكل)",
+    "Acute Abdominal Pain (Right Lower Quadrant tenderness)": "ألم حاد في البطن (ألم في الربع السفلي الأيمن)",
+    "Dysphagia (Difficulty swallowing)": "عسر البلع (صعوبة في البلع)",
+    "Nausea, emesis, and dehydration": "غثيان، قيء، وجفاف",
+    "Hematemesis (Vomiting blood)": "قيء دموي",
+    "Melena (Dark tarry stools)": "تغوط أسود (براز داكن مدمم)",
+    "Syncope (Transient loss of consciousness)": "إغماء (فقدان وعي مؤقت)",
+    "Severe Unilateral Throbbing Headache": "صداع نصفي نابض وشديد",
+    "Vertigo and Tinnitus": "دوار وطنين في الأذن",
+    "Paresthesia (Numbness/tingling in extremities)": "خدر وتنميل في الأطراف",
+    "Generalized Myalgia and Arthralgia": "آلام عامة في العضلات والمفاصل",
+    "Polyuria, Polydipsia, and Polyphagia": "كثرة التبول، كثرة العطش، وكثرة الجوع",
+    "Diaphoresis (Profuse sweating)": "تعرق مفرط",
+
+    // --> Diagnosis Dictation List
+    "I10 - Essential (Primary) Hypertension": "I10 - ارتفاع ضغط الدم الأساسي (الأولي)",
+    "E11.9 - Type 2 Diabetes Mellitus without complications": "E11.9 - داء السكري من النوع الثاني بدون مضاعفات",
+    "E78.5 - Hyperlipidemia, Unspecified": "E78.5 - فرط شحميات الدم، غير محدد",
+    "I25.10 - Atherosclerotic heart disease of native coronary artery": "I25.10 - مرض القلب التاجي وتصلب الشرايين",
+    "I48.91 - Unspecified Atrial Fibrillation": "I48.91 - رجفان أذيني غير محدد",
+    "J06.9 - Acute Upper Respiratory Infection, Unspecified": "J06.9 - عدوى حادة في الجهاز التنفسي العلوي",
+    "J20.9 - Acute Bronchitis, Unspecified": "J20.9 - التهاب الشعب الهوائية الحاد",
+    "J45.909 - Unspecified Asthma, uncomplicated": "J45.909 - ربو غير محدد، بدون مضاعفات",
+    "N39.0 - Urinary Tract Infection, site not specified": "N39.0 - عدوى المسالك البولية",
+    "A09 - Infectious Gastroenteritis and Colitis": "A09 - النزلة المعوية والتهاب القولون المعدي",
+    "K21.9 - Gastroesophageal Reflux Disease (GERD) without esophagitis": "K21.9 - ارتجاع المريء (GERD) بدون التهاب",
+    "M19.90 - Unspecified Osteoarthritis, unspecified site": "M19.90 - الفصال العظمي والتهاب المفاصل",
+    "M54.50 - Low Back Pain, Unspecified": "M54.50 - ألم أسفل الظهر",
+    "G43.909 - Migraine, Unspecified, not intractable": "G43.909 - صُداع نصفي، غير محدد",
+    "R07.9 - Chest Pain, Unspecified": "R07.9 - ألم في الصدر، غير محدد",
+
+    // --> Prescriptions (Rx) Dictation List
+    "Lisinopril 10mg - 1 tablet PO QD": "ليسينوبريل 10مغ - قرص واحد يومياً (عن طريق الفم)",
+    "Amlodipine Besylate 5mg - 1 tablet PO QD": "أملوديبين بيسيلات 5مغ - قرص واحد يومياً",
+    "Atorvastatin Calcium 20mg - 1 tablet PO HS": "أتورفاستاتين كالسيوم 20مغ - قرص واحد قبل النوم",
+    "Metoprolol Succinate 50mg - 1 tablet PO QD": "ميتوبرولول سوكسينات 50مغ - قرص واحد يومياً",
+    "Metformin HCl 500mg - 1 tablet PO BID with meals": "ميتفورمين 500مغ - قرص مرتين يومياً مع الأكل",
+    "Sitagliptin Phosphate 100mg - 1 tablet PO QD": "سيتاغليبتين 100مغ - قرص واحد يومياً",
+    "Amoxicillin 500mg - 1 capsule PO TID x 7 days": "أموكسيسيلين 500مغ - كبسولة 3 مرات يومياً لمدة 7 أيام",
+    "Azithromycin 250mg - 2 tabs PO day 1, then 1 tab PO QD x 4 days": "أزيثروميسين 250مغ - حبتين اليوم الأول، ثم حبة يومياً لـ 4 أيام",
+    "Ciprofloxacin 500mg - 1 tablet PO BID x 5 days": "سيبروفلوكساسين 500مغ - قرص مرتين يومياً لمدة 5 أيام",
+    "Omeprazole 20mg - 1 capsule PO AC daily": "أوميبرازول 20مغ - كبسولة يومياً قبل الأكل",
+    "Ibuprofen 400mg - 1 tablet PO Q6H PRN for pain": "آيبوبروفين 400مغ - قرص كل 6 ساعات عند اللزوم للألم",
+    "Acetaminophen 500mg - 1-2 tablets PO Q6H PRN pain/fever": "أسيتامينوفين 500مغ - 1-2 قرص كل 6 ساعات عند اللزوم للألم والحرارة",
+    "Albuterol HFA Inhaler - 2 puffs MDI Q4H PRN shortness of breath": "بخاخ ألبوتيرول - بختين كل 4 ساعات عند ضيق التنفس",
+    "Montelukast Sodium 10mg - 1 tablet PO HS": "مونتيلوكاست صوديوم 10مغ - قرص واحد قبل النوم",
 
     // ==========================================
     // 5. DIAGNOSTICS & LABS
@@ -275,6 +331,7 @@ const translations = {
     // ==========================================
     // 8. PATIENT HISTORY & RECORDS
     // ==========================================
+    "Patient Database": "قاعدة بيانات المرضى",  // <--- FIXED!
     "Search Name, Phone, or MRN...": "ابحث بالاسم، الجوال، رقم الملف...",
     "Registered Patients Directory": "دليل المرضى المسجلين",
     "Patient Profile": "ملف المريض",
@@ -323,7 +380,6 @@ const translations = {
     "External Document Archive": "أرشيف المستندات الخارجية",
     "No external files or scans have been uploaded to this patient's record.": "لم يتم رفع ملفات خارجية في سجل هذا المريض.",
     "Confidential Medical Document • Generated via OPERIX Care System": "وثيقة طبية سرية • صادرة من نظام أوبريكس",
-
 
     // ==========================================
     // 9. FINANCE DASHBOARD
@@ -426,7 +482,6 @@ const translations = {
     "Surgeries": "العمليات الجراحية",
     "Total Patients": "إجمالي المرضى",
     "Account Approvals": "طلبات الحسابات",
-    "Pending": "معلق",
     "All caught up.": "لا توجد طلبات معلقة.",
     "No Name Provided": "بدون اسم",
     "Approve": "قبول",
@@ -445,7 +500,6 @@ const translations = {
     "System Role": "الصلاحية في النظام",
     "Clearance Actions": "إجراءات التصريح",
     "Registry is empty.": "السجل فارغ.",
-    "Full Name": "الاسم الكامل",
     "Admin": "مدير النظام",
     "Nurse": "ممرض",
     "Receptionist": "استقبال",
@@ -461,9 +515,30 @@ const translations = {
     "My Health Records": "سجلاتي الصحية",
     "Appointments": "مواعيدي",
     "Active Rx": "أدويتي الحالية",
-    "Lab Results": "نتائج تحاليلي"
-    
-   
+    "Lab Results": "نتائج تحاليلي",
+
+    // ==========================================
+    // 13. BLOOD BANK
+    // ==========================================
+    "Live Inventory": "المخزون المباشر",
+    "Blood Bank Operations": "عمليات بنك الدم",
+    "Enterprise hemotherapy dispensing and tracking.": "إدارة وصرف وتتبع العلاج بالدم.",
+    "Sync Ledger": "تحديث السجل",
+    "Accessing cold storage records...": "الوصول إلى سجلات التخزين البارد...",
+    "Total Vault Capacity": "إجمالي سعة المخزن",
+    "Units": "وحدات",
+    "Critical Shortages": "نقص حرج",
+    "Groups": "فصائل",
+    "System Health": "حالة النظام",
+    "Action Required": "إجراء مطلوب",
+    "Monitor Levels": "مراقبة المستويات",
+    "Optimal": "مثالي",
+    "Depleted": "نفد",
+    "Critical": "حرج",
+    "Low Stock": "مخزون منخفض",
+    "Healthy": "جيد",
+    "Dispense": "صرف",
+    "Add": "إضافة"
   }
 };
 
