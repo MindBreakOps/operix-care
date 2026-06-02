@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext'; // <-- ADDED useLanguage
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 // Import Layout & Pages
 import AppLayout from './components/layout/AppLayout';
+import Landing from './pages/Landing'; // <-- IMPORTED LANDING PAGE
 import Login from './pages/auth/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ReceptionPortal from "./pages/reception/ReceptionPortal";
@@ -26,7 +27,7 @@ import Settings from './pages/settings/Settings';
 // Route Protector
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, role, loading } = useAuth();
-  const { t } = useLanguage(); // <-- Added for translation
+  const { t } = useLanguage(); 
   
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="loader border-t-blue-600"></div></div>;
   if (!user) return <Navigate to="/login" />;
@@ -36,12 +37,16 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function AppRoutes() {
   const { user, role } = useAuth();
-  const { t } = useLanguage(); // <-- Added for translation
+  const { t } = useLanguage(); 
 
   return (
     <Routes>
+      {/* Set Landing as the root route. 
+        If logged in, redirect to their role dashboard. 
+        If not, show the Landing page.
+      */}
+      <Route path="/" element={user ? <Navigate to={`/${role}`} /> : <Landing />} />
       <Route path="/login" element={user ? <Navigate to={`/${role}`} /> : <Login />} />
-      <Route path="/" element={user ? <Navigate to={`/${role}`} /> : <Login />} />
 
       <Route element={<AppLayout />}>
         {/* Core Hospital Workflows */}
@@ -67,7 +72,7 @@ function AppRoutes() {
         {/* Patient Only Workflow */}
         <Route path="/patient" element={<ProtectedRoute allowedRoles={['patient']}><PatientPortal /></ProtectedRoute>} />
         
-        {/* Access Denied Page - TRANSLATED! */}
+        {/* Access Denied Page */}
         <Route path="/unauthorized" element={
           <div className="flex flex-col items-center justify-center h-[80vh] text-center space-y-4">
             <h1 className="text-4xl font-black text-slate-900 dark:text-white">{t('Access Denied')}</h1>
