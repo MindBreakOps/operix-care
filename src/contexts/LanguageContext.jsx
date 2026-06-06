@@ -184,8 +184,6 @@ const translations = {
     "TAP TO DICTATE DIAGNOSIS": "اضغط للتحدث (التشخيص)",
     "TAP TO DICTATE PRESCRIPTION": "اضغط للتحدث (الوصفة)",
     "Voice recognition is not supported in your browser.": "ميزة التعرف على الصوت غير مدعومة في متصفحك.",
-    
-    // --> Symptoms Dictation List
     "Acute Chest Pain (Retrosternal, crushing)": "ألم حاد في الصدر (خلف القص، ضاغط)",
     "Dyspnea on exertion (Shortness of breath)": "ضيق التنفس عند المجهود",
     "Paroxysmal Nocturnal Dyspnea (PND)": "ضيق التنفس الليلي الانتيابي",
@@ -207,8 +205,6 @@ const translations = {
     "Generalized Myalgia and Arthralgia": "آلام عامة في العضلات والمفاصل",
     "Polyuria, Polydipsia, and Polyphagia": "كثرة التبول، كثرة العطش، وكثرة الجوع",
     "Diaphoresis (Profuse sweating)": "تعرق مفرط",
-
-    // --> Diagnosis Dictation List
     "I10 - Essential (Primary) Hypertension": "I10 - ارتفاع ضغط الدم الأساسي (الأولي)",
     "E11.9 - Type 2 Diabetes Mellitus without complications": "E11.9 - داء السكري من النوع الثاني بدون مضاعفات",
     "E78.5 - Hyperlipidemia, Unspecified": "E78.5 - فرط شحميات الدم، غير محدد",
@@ -224,8 +220,6 @@ const translations = {
     "M54.50 - Low Back Pain, Unspecified": "M54.50 - ألم أسفل الظهر",
     "G43.909 - Migraine, Unspecified, not intractable": "G43.909 - صُداع نصفي، غير محدد",
     "R07.9 - Chest Pain, Unspecified": "R07.9 - ألم في الصدر، غير محدد",
-
-    // --> Prescriptions (Rx) Dictation List
     "Lisinopril 10mg - 1 tablet PO QD": "ليسينوبريل 10مغ - قرص واحد يومياً (عن طريق الفم)",
     "Amlodipine Besylate 5mg - 1 tablet PO QD": "أملوديبين بيسيلات 5مغ - قرص واحد يومياً",
     "Atorvastatin Calcium 20mg - 1 tablet PO HS": "أتورفاستاتين كالسيوم 20مغ - قرص واحد قبل النوم",
@@ -331,7 +325,7 @@ const translations = {
     // ==========================================
     // 8. PATIENT HISTORY & RECORDS
     // ==========================================
-    "Patient Database": "قاعدة بيانات المرضى",  // <--- FIXED!
+    "Patient Database": "قاعدة بيانات المرضى",
     "Search Name, Phone, or MRN...": "ابحث بالاسم، الجوال، رقم الملف...",
     "Registered Patients Directory": "دليل المرضى المسجلين",
     "Patient Profile": "ملف المريض",
@@ -538,7 +532,50 @@ const translations = {
     "Low Stock": "مخزون منخفض",
     "Healthy": "جيد",
     "Dispense": "صرف",
-    "Add": "إضافة"
+    "Add": "إضافة",
+
+    // ==========================================
+    // 14. SETTINGS
+    // ==========================================
+    "System Configuration": "تكوين النظام",
+    "Settings": "الإعدادات",
+    "Manage your account, localization, and system preferences.": "إدارة حسابك، إعدادات اللغة، وتفضيلات النظام.",
+    "Profile": "الملف الشخصي",
+    "Preferences": "التفضيلات",
+    "Security": "الأمان",
+    "Registered Account": "الحساب المسجل",
+    "System Role:": "الصلاحية في النظام:",
+    "Language": "اللغة",
+    "English (US)": "الإنجليزية (الولايات المتحدة)",
+    "العربية (Arabic)": "العربية",
+    "Theme": "مظهر الواجهة",
+    "Light Mode": "الوضع الفاتح",
+    "Dark Mode": "الوضع الداكن",
+    "Log Out": "تسجيل الخروج",
+    "Terminate active session securely.": "إنهاء الجلسة النشطة بأمان.",
+
+    // ==========================================
+    // 15. SUPER ADMIN / SAAS
+    // ==========================================
+    "SaaS Control Plane": "لوحة تحكم النظام (SaaS)",
+    "Network Workspaces": "مساحات عمل الشبكة",
+    "Provision New Tenant": "إنشاء مساحة عمل جديدة",
+    "Total Workspaces": "إجمالي مساحات العمل",
+    "Active Tenants": "المنشآت النشطة",
+    "Estimated MRR": "الإيرادات الشهرية المتوقعة",
+    "Search domain or facility...": "ابحث عن نطاق أو منشأة...",
+    "Facility Info": "معلومات المنشأة",
+    "Domain Routing": "توجيه النطاق",
+    "Subscription": "الاشتراك",
+    "Status": "الحالة",
+    "Actions": "الإجراءات",
+    "Create a workspace and initial admin account.": "إنشاء مساحة عمل وحساب مدير أولي.",
+    "Facility Name": "اسم المنشأة",
+    "Subdomain Routing": "نطاق التوجيه (Subdomain)",
+    "Subscription Tier": "باقة الاشتراك",
+    "Initial Admin Account": "حساب المدير الأولي",
+    "Deploy Workspace & Account": "نشر مساحة العمل والحساب",
+    "Network Control": "إدارة الشبكة"
   }
 };
 
@@ -547,16 +584,12 @@ const LanguageContext = createContext();
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(localStorage.getItem('operix_lang') || 'en');
 
-  // Automatically flips the entire app layout left-to-right based on language!
   useEffect(() => {
     localStorage.setItem('operix_lang', language);
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
   }, [language]);
 
-  // The smart translation function:
-  // If english, return the key as-is.
-  // If arabic, try to find the translation. If missing, fail gracefully and just show the English text.
   const t = (key) => {
     if (language === 'en') return key;
     return translations[language]?.[key] || key; 

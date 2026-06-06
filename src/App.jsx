@@ -5,9 +5,14 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 // Import Layout & Pages
 import AppLayout from './components/layout/AppLayout';
-import Landing from './pages/Landing'; // <-- IMPORTED LANDING PAGE
+import Landing from './pages/Landing'; 
+import Subscription from './pages/Subscription';
+import WorkspaceDiscovery from './pages/auth/WorkspaceDiscovery'; 
 import Login from './pages/auth/Login';
+import SuperAdminLogin from './pages/auth/SuperAdminLogin'; // <--- NEW SAAS LOGIN
+
 import AdminDashboard from './pages/admin/AdminDashboard';
+import SuperAdminPortal from './pages/admin/SuperAdminPortal'; 
 import ReceptionPortal from "./pages/reception/ReceptionPortal";
 import NursePortal from "./pages/nurse/NursePortal";
 import DoctorWorkspace from './pages/doctor/DoctorWorkspace';
@@ -15,7 +20,7 @@ import ChemistPortal from './pages/chemist/ChemistPortal';
 import PatientPortal from './pages/patient/PatientPortal';
 import DiagnosticLab from './pages/DiagnosticLab'; 
 
-// Advanced & Shared Modules
+// Shared Modules
 import Appointments from './pages/shared/Appointments';
 import PatientHistory from "./pages/shared/PatientHistory"; 
 import OperationsBoard from './pages/doctor/OperationsBoard';
@@ -29,34 +34,57 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, role, loading } = useAuth();
   const { t } = useLanguage(); 
   
-  if (loading) return <div className="h-screen flex items-center justify-center"><div className="loader border-t-blue-600"></div></div>;
-  if (!user) return <Navigate to="/login" />;
-  if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/unauthorized" />;
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+  
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/unauthorized" replace />;
+  
   return children;
 };
 
+// ... keep imports
+
 function AppRoutes() {
   const { user, role } = useAuth();
-  const { t } = useLanguage(); 
+  const { t } = useLanguage();
+
+  const getRedirectPath = (userRole) => {
+    // If a super_admin somehow hits the normal login flow, route them securely to the superadmin portal
+    if (userRole === 'super_admin') return '/superadmin'; 
+    if (userRole === 'admin') return '/admin';
+    if (userRole === 'receptionist') return '/reception';
+    if (userRole === 'nurse') return '/nurse';
+    if (userRole === 'doctor') return '/doctor';
+    if (userRole === 'chemist') return '/chemist';
+    if (userRole === 'patient') return '/patient';
+    return '/'; 
+  };
 
   return (
     <Routes>
-      {/* Set Landing as the root route. 
-        If logged in, redirect to their role dashboard. 
-        If not, show the Landing page.
-      */}
-      <Route path="/" element={user ? <Navigate to={`/${role}`} /> : <Landing />} />
-      <Route path="/login" element={user ? <Navigate to={`/${role}`} /> : <Login />} />
+      {/* PUBLIC ROUTES */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/subscription" element={<Subscription />} />
+      <Route path="/discovery" element={<WorkspaceDiscovery />} />
+      
+      {/* STRICT SEPARATION AUTH ROUTES */}
+      <Route path="/saas-login" element={user && role === 'super_admin' ? <Navigate to="/superadmin" replace /> : <SuperAdminLogin />} />
+      <Route path="/login" element={user ? <Navigate to={getRedirectPath(role)} replace /> : <Login />} />
 
+      {/* PROTECTED HOSPITAL WORKFLOWS */}
       <Route element={<AppLayout />}>
-        {/* Core Hospital Workflows */}
+        {/* SAAS CONTROL PLANE (Only accessible by super_admin) */}
+        <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminPortal /></ProtectedRoute>} />
+        
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/reception" element={<ProtectedRoute allowedRoles={['receptionist', 'admin']}><ReceptionPortal /></ProtectedRoute>} />
         <Route path="/nurse" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NursePortal /></ProtectedRoute>} />
         <Route path="/doctor" element={<ProtectedRoute allowedRoles={['doctor', 'admin']}><DoctorWorkspace /></ProtectedRoute>} />
         <Route path="/chemist" element={<ProtectedRoute allowedRoles={['chemist', 'admin']}><ChemistPortal /></ProtectedRoute>} />
-        
-        {/* Advanced Medical Modules */}
         <Route path="/operations" element={<ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse']}><OperationsBoard /></ProtectedRoute>} />
         <Route path="/bloodbank" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}><BloodBank /></ProtectedRoute>} />
         <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin']}><HumanResources /></ProtectedRoute>} />
@@ -64,15 +92,12 @@ function AppRoutes() {
         <Route path="/pathology" element={<DiagnosticLab labTypeOverride="Pathology" />} />
         <Route path="/radiology" element={<DiagnosticLab labTypeOverride="Radiology" />} />
         
-        {/* Shared / Cross-Department Workflows */}
         <Route path="/appointments" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'receptionist']}><Appointments /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}><PatientHistory /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'chemist', 'patient', 'nurse', 'receptionist']}><Settings /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'chemist', 'patient', 'nurse', 'receptionist', 'super_admin']}><Settings /></ProtectedRoute>} />
         
-        {/* Patient Only Workflow */}
         <Route path="/patient" element={<ProtectedRoute allowedRoles={['patient']}><PatientPortal /></ProtectedRoute>} />
         
-        {/* Access Denied Page */}
         <Route path="/unauthorized" element={
           <div className="flex flex-col items-center justify-center h-[80vh] text-center space-y-4">
             <h1 className="text-4xl font-black text-slate-900 dark:text-white">{t('Access Denied')}</h1>
@@ -85,6 +110,7 @@ function AppRoutes() {
     </Routes>
   );
 }
+
 
 export default function App() {
   return (

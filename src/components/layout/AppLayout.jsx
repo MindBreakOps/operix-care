@@ -7,7 +7,7 @@ import logo from '../../assets/logo.jpg';
 import { 
   LayoutDashboard, Users, HeartPulse, Stethoscope, 
   FlaskConical, Activity, Droplet, History, Briefcase, DollarSign, 
-  Microscope, Settings, LogOut, Globe, ChevronLeft, ChevronRight, User, ShieldPlus
+  Microscope, Settings, LogOut, Globe, ChevronLeft, ChevronRight, User, ShieldPlus, Network
 } from 'lucide-react';
 
 export default function AppLayout() {
@@ -57,6 +57,7 @@ export default function AppLayout() {
 	...(userRole === 'admin' ? [{ name: t("Financial Controller"), path: "/finance", icon: DollarSign, color: "text-purple-400", bg: "bg-purple-500" }] : []),
 	...(['admin', 'pathologist', 'doctor'].includes(userRole) ? [{ name: t("Medical Labs"), path: "/pathology", icon: Microscope, color: "text-pink-400", bg: "bg-pink-500" }] : []),
 	...(['admin', 'radiologist', 'doctor'].includes(userRole) ? [{ name: t("Radiography"), path: "/radiology", icon: Activity, color: "text-purple-400", bg: "bg-purple-500" }] : []),
+	...(userRole === 'super_admin' ? [{ name: t("Network Control"), path: "/superadmin", icon: Network, color: "text-blue-400", bg: "bg-blue-500" }] : []),
   ];
 
   return (

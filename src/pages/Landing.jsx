@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// ─── THE MASTER GAS FETCHER ───
 const OPS_API = 'https://script.google.com/macros/s/AKfycbxzwlFPfOFiUS5atnjkAuXDcr-L_-LSY33_S9d6t12P36qmTWthc00ywCKpReFxzLY/exec';
 const TARGET_EMAIL = 'operixsolution@gmail.com';
 
-// Vite serves from public folder automatically
 import logoImg from '../assets/favicon.ico';
 
 const gasCall = async (payload) => {
@@ -21,7 +19,6 @@ const gasCall = async (payload) => {
   }
 };
 
-// 🎨 Minimalist Icons for Healthcare
 const Icons = {
   Globe: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
   ArrowRight: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>,
@@ -35,6 +32,7 @@ const Icons = {
 const translations = {
   en: {
 	login: "Login",
+	pricing: "Pricing", // <--- Added
 	demoBtn: "Book a Demo",
 	badge: "Clinical Operations",
 	heroTitle: "The modern operating system for your ",
@@ -58,6 +56,7 @@ const translations = {
   },
   ar: {
 	login: "تسجيل الدخول",
+	pricing: "الأسعار", // <--- Added
 	demoBtn: "طلب عرض",
 	badge: "العمليات السريرية",
 	heroTitle: "نظام التشغيل الحديث لـ ",
@@ -88,11 +87,10 @@ export default function Landing() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoForm, setDemoForm] = useState({ name: '', email: '', company: '', employees: '1-50' });
 
-  // ─── INTERACTIVE SYSTEM STATE ───
   const [activeTab, setActiveTab] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [dictationText, setDictationText] = useState('');
-  const [scanStatus, setScanStatus] = useState('idle'); // idle, scanning, complete
+  const [scanStatus, setScanStatus] = useState('idle'); 
 
   const t = translations[lang];
   const isAr = lang === 'ar';
@@ -157,7 +155,6 @@ export default function Landing() {
   return (
 	<div style={{ minHeight: '100vh', background: '#fafafa', color: '#111111', direction: isAr ? 'rtl' : 'ltr', fontFamily: isAr ? 'system-ui, sans-serif' : 'Inter, system-ui, sans-serif' }}>
 	  
-	  {/* ─── INJECTED CSS FOR RESPONSIVE INTERACTIVE GRID ─── */}
 	  <style>{`
 		.interactive-container { display: flex; flex-direction: column; gap: 24px; }
 		@media (min-width: 900px) {
@@ -168,34 +165,22 @@ export default function Landing() {
 		  flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;
 		  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); overflow: hidden; display: flex; flex-direction: column;
 		}
-		.mockup-header {
-		  display: flex; gap: 6px; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
-		}
+		.mockup-header { display: flex; gap: 6px; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
 		.mockup-dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
 		.tab-btn {
 		  display: flex; align-items: flex-start; gap: 16px; padding: 20px; width: 100%;
 		  text-align: ${isAr ? 'right' : 'left'}; background: transparent; border: 1px solid transparent;
 		  border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
 		}
-		.tab-btn.active {
-		  background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-		}
+		.tab-btn.active { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
 		.tab-btn:hover:not(.active) { background: #f1f5f9; }
-		
-		.pulse-ring {
-		  animation: pulse 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-		}
+		.pulse-ring { animation: pulse 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
 		@keyframes pulse {
 		  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
 		  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
 		  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 		}
-		@keyframes scanline {
-		  0% { top: 0%; opacity: 0; }
-		  10% { opacity: 1; }
-		  90% { opacity: 1; }
-		  100% { top: 100%; opacity: 0; }
-		}
+		@keyframes scanline { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 	  `}</style>
 
 	  {/* ─── NAVBAR ─── */}
@@ -205,9 +190,12 @@ export default function Landing() {
 		  <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px' }}>OPERIX <span style={{color: '#10b981'}}>CARE</span></span>
 		</div>
 		
-		<div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+		<div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
 		  <button onClick={() => setLang(isAr ? 'en' : 'ar')} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 500 }}>
 			{Icons.Globe} {isAr ? 'EN' : 'AR'}
+		  </button>
+		  <button style={{ background: 'transparent', border: 'none', color: '#64748b', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }} onClick={() => navigate('/subscription')}>
+			{t.pricing}
 		  </button>
 		  <button style={{ background: 'transparent', border: 'none', color: '#0a0a0a', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }} onClick={() => navigate('/login')}>
 			{t.login}
@@ -240,6 +228,9 @@ export default function Landing() {
 		  <button style={{ background: '#0a0a0a', color: '#ffffff', border: 'none', padding: '14px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setShowDemoModal(true)}>
 			{t.demoBtn} {isAr ? Icons.ArrowLeft : Icons.ArrowRight}
 		  </button>
+		  <button style={{ background: '#e2e8f0', color: '#0a0a0a', border: 'none', padding: '14px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/subscription')}>
+			{t.pricing}
+		  </button>
 		</div>
 	  </header>
 
@@ -253,7 +244,6 @@ export default function Landing() {
 		  </div>
 
 		  <div className="interactive-container">
-			{/* Sidebar Controls */}
 			<div className="interactive-sidebar">
 			  {[
 				{ id: 0, icon: Icons.Stethoscope, title: t.p1Title, desc: t.p1Desc },
@@ -261,11 +251,7 @@ export default function Landing() {
 				{ id: 2, icon: Icons.Shield, title: t.p3Title, desc: t.p3Desc },
 				{ id: 3, icon: Icons.Scan, title: t.p4Title, desc: t.p4Desc }
 			  ].map((tab) => (
-				<button 
-				  key={tab.id} 
-				  className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-				  onClick={() => setActiveTab(tab.id)}
-				>
+				<button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
 				  <div style={{ color: activeTab === tab.id ? '#10b981' : '#94a3b8', transition: 'color 0.2s' }}>{tab.icon}</div>
 				  <div>
 					<h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 4px 0', color: activeTab === tab.id ? '#0a0a0a' : '#475569' }}>{tab.title}</h3>
@@ -275,7 +261,6 @@ export default function Landing() {
 			  ))}
 			</div>
 
-			{/* Interactive Mockup Window */}
 			<div className="mockup-window">
 			  <div className="mockup-header" style={{ flexDirection: isAr ? 'row-reverse' : 'row' }}>
 				<div className="mockup-dot" style={{ background: '#f87171' }}></div>
@@ -284,7 +269,6 @@ export default function Landing() {
 			  </div>
 			  
 			  <div style={{ flex: 1, padding: '32px', display: 'flex', flexDirection: 'column' }}>
-				
 				{/* MOCKUP 1: CLINICAL PORTAL */}
 				{activeTab === 0 && (
 				  <div style={{ animation: 'fadeIn 0.3s' }}>
@@ -419,7 +403,6 @@ export default function Landing() {
 			  </div>
 			</div>
 		  </div>
-
 		</div>
 	  </section>
 
@@ -427,12 +410,10 @@ export default function Landing() {
 		{t.footer}
 	  </footer>
 
-	  {/* ─── MODAL ─── */}
+	  {/* ─── DEMO MODAL ─── */}
 	  {showDemoModal && (
 		<div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(10, 10, 10, 0.7)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-		  
 		  <div style={{ background: '#ffffff', padding: '32px', borderRadius: '12px', width: '100%', maxWidth: '440px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #e2e8f0' }}>
-			
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
 			  <div>
 				<h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px 0', color: '#0a0a0a' }}>{t.modalTitle}</h3>
@@ -446,12 +427,10 @@ export default function Landing() {
 				<label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: '#334155' }}>{isAr ? 'الاسم' : 'Full Name'}</label>
 				<input type="text" style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#0a0a0a', fontSize: '14px', boxSizing: 'border-box' }} value={demoForm.name} onChange={e => setDemoForm({...demoForm, name: e.target.value})} required />
 			  </div>
-			  
 			  <div>
 				<label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: '#334155' }}>{isAr ? 'البريد' : 'Work Email'}</label>
 				<input type="email" style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#0a0a0a', fontSize: '14px', boxSizing: 'border-box' }} value={demoForm.email} onChange={e => setDemoForm({...demoForm, email: e.target.value})} required />
 			  </div>
-
 			  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
 				<div>
 				  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: '#334155' }}>{isAr ? 'المنشأة الطبية' : 'Healthcare Facility'}</label>
@@ -472,12 +451,10 @@ export default function Landing() {
 				{isSubmitting ? t.submitting : t.submit}
 			  </button>
 			</form>
-
 		  </div>
 		</div>
 	  )}
 
-	  {/* Basic Keyframe Injection for smooth mockup transitions */}
 	  <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 	</div>
   );

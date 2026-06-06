@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../config/supabaseClient';
 
@@ -7,83 +6,150 @@ const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
-  // loading defaults to true so the app waits during the initial boot
+  const [workspace, setWorkspace] = useState(null);
+  const [workspaceError, setWorkspaceError] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const setWorkspaceAndPersist = (tenantData) => {
+	setWorkspace(tenantData);
+	if (tenantData) {
+	  localStorage.setItem('operix_workspace_id', tenantData.id);
+	} else {
+	  localStorage.removeItem('operix_workspace_id');
+	}
+  };
+
   useEffect(() => {
-	const checkUser = async () => {
+	let isMounted = true;
+	let currentTenantId = null;
+
+	const verifyAndSetUser = async (authUser, tenantId) => {
 	  try {
-		const { data: { session } } = await supabase.auth.getSession();
+		const { data: profile, error } = await supabase
+		  .from('profiles')
+		  .select('*')
+		  .eq('id', authUser.id)
+		  .single();
 		
-		if (session?.user) {
-		  const { data: profile, error } = await supabase
-			.from('profiles')
-			.select('*')
-			.eq('id', session.user.id)
-			.single();
-		  
-		  if (error) {
-			console.error("Error fetching profile:", error);
-			await supabase.auth.signOut();
-			setUser(null);
-			setRole(null);
-		  } else if (profile && (profile.status === 'pending' || profile.status === 'rejected')) {
-			await supabase.auth.signOut();
-			setUser(null);
-			setRole(null);
-		  } else {
-			setUser(session.user);
-			setRole(profile?.role || 'patient');
+		if (error || !profile) {
+		  console.error("Error fetching profile or profile missing.");
+		  await supabase.auth.signOut();
+		  if(isMounted) { setUser(null); setRole(null); }
+		} else if (tenantId && profile.workspace_id !== tenantId && profile.role !== 'super_admin') {
+		  // STRICT TENANT ISOLATION CHECK (Bypassed if you are a super_admin)
+		  console.error("User does not belong to this workspace.");
+		  await supabase.auth.signOut();
+		  if(isMounted) { setUser(null); setRole(null); }
+		  alert("Unauthorized: Your account does not belong to this facility's workspace.");
+		} else if (profile.status === 'pending' || profile.status === 'rejected') {
+		  await supabase.auth.signOut();
+		  if(isMounted) { setUser(null); setRole(null); }
+		} else {
+		  if(isMounted) {
+			setUser(authUser);
+			setRole(profile.role || 'patient');
 		  }
+		}
+	  } catch (err) {
+		console.error("Verification error:", err);
+	  }
+	};
+
+	const initializeTenantAndAuth = async () => {
+	  try {
+		const path = window.location.pathname;
+		// Whitelisted public routes
+		const isPublic = path === '/' || path === '/subscription' || path === '/login' || path === '/saas-login';
+		
+		let tenantData = null;
+
+		// Try local storage
+		const savedWorkspaceId = localStorage.getItem('operix_workspace_id');
+		if (savedWorkspaceId) {
+		  const { data } = await supabase.from('workspaces').select('*').eq('id', savedWorkspaceId).single();
+		  if (data) tenantData = data;
+		}
+
+		// Fallback to domain
+		if (!tenantData) {
+		  let currentDomain = window.location.hostname;
+		  if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
+			 currentDomain = 'operix-solutions';
+		  }
+		  const { data } = await supabase.from('workspaces').select('*').eq('domain', currentDomain).maybeSingle();
+		  if (data) tenantData = data;
+		}
+	
+		// Block if not public and no tenant found
+		if (!isPublic && !tenantData) {
+		  if(isMounted) { setWorkspaceError(true); setLoading(false); }
+		  return;
+		}
+		
+		if (tenantData && isMounted) {
+		  setWorkspace(tenantData);
+		  currentTenantId = tenantData.id;
+		}
+	
+		// Init Auth session
+		const { data: { session } } = await supabase.auth.getSession();
+		if (session?.user) {
+		  await verifyAndSetUser(session.user, currentTenantId);
 		}
 	  } catch (error) {
 		console.error("Auth check failed:", error);
 	  } finally {
-		// This clears the initial loading screen
-		setLoading(false);
+		if(isMounted) setLoading(false);
 	  }
 	};
 
-	checkUser();
+	initializeTenantAndAuth();
 
-	// Listen for auth events (like signing in, out, or tab-focus token refreshes)
+	// Listen for auth events
 	const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-	  // CRITICAL FIX: Do NOT put setLoading(true) here!
-	  // Doing so destroys the 'children' prop, causing a full app reload on tab focus.
-	  
 	  try {
 		if (session?.user) {
-		  // Optimization: Only re-fetch the profile if it's a brand new sign-in
-		  // We don't need to query the database again just because a token refreshed in the background
 		  if (event === 'SIGNED_IN') {
-			const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-			if (profile && (profile.status === 'pending' || profile.status === 'rejected')) {
-			  await supabase.auth.signOut();
-			  setUser(null);
-			  setRole(null);
-			} else {
-			  setUser(session.user);
-			  setRole(profile?.role || 'patient');
-			}
+			await verifyAndSetUser(session.user, currentTenantId);
 		  } else {
-			// For token refreshes, just update the user object silently
-			setUser(session.user);
+			if(isMounted) setUser(session.user); // silent update on refresh
 		  }
 		} else {
-		  setUser(null);
-		  setRole(null);
+		  if(isMounted) { setUser(null); setRole(null); }
 		}
 	  } catch (error) {
 		 console.error("State change error:", error);
 	  }
-	  // CRITICAL FIX: No setLoading(false) here either, leave the global loading state alone.
 	});
 
-	return () => subscription.unsubscribe();
+	return () => {
+	  isMounted = false;
+	  subscription?.unsubscribe();
+	};
   }, []);
 
+  const signOut = async () => {
+	await supabase.auth.signOut();
+	localStorage.removeItem('operix_workspace_id'); // Clear tenant on sign out
+	setWorkspace(null);
+	setUser(null);
+	setRole(null);
+  };
+
+  if (workspaceError) {
+	return (
+	  <div className="h-screen flex flex-col items-center justify-center bg-slate-950 text-white font-sans p-6 text-center">
+		<div className="w-20 h-20 bg-red-500/20 text-red-500 rounded-3xl flex items-center justify-center mb-6">
+			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+		</div>
+		<h1 className="text-4xl font-black mb-2 text-white">Workspace Not Found</h1>
+		<p className="text-slate-400 max-w-md">No registered medical facility was found. Please access the system via the main landing page.</p>
+	  </div>
+	);
+  }
+
   return (
-	<AuthContext.Provider value={{ user, role, loading }}>
+	<AuthContext.Provider value={{ user, role, workspace, loading, signOut, setWorkspaceAndPersist }}>
 	  {!loading && children}
 	</AuthContext.Provider>
   );
