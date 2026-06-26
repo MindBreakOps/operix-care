@@ -304,7 +304,7 @@ function SupportModal({ t, isAr, onClose }) {
 	{ icon: Icons.Mail, label: t.supportInfoEmail, value: 'info@operix-solutions.com', href: 'mailto:info@operix-solutions.com', accent: '#e11d48' },
 	{ icon: Icons.HelpCircle, label: t.supportEmail, value: 'support@operix-solutions.com', href: 'mailto:support@operix-solutions.com', accent: '#a855f7' },
 	{ icon: Icons.FileText, label: t.supportSubEmail, value: 'subscription@operix-solutions.com', href: 'mailto:subscription@operix-solutions.com', accent: '#3b82f6' },
-	{ icon: Icons.Globe, label: t.supportWebsite, value: 'www.operix-solutions.com', href: 'https://www.operix-solutions.com', accent: '#10b981' },
+	{ icon: Icons.Globe, label: t.supportWebsite, value: 'www.operix-solutions.com/about', href: 'https://www.operix-solutions.com', accent: '#10b981' },
   ];
   return (
 	<div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,30,0.75)', backdropFilter: 'blur(6px)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }} onClick={onClose}>
@@ -969,7 +969,7 @@ export default function Landing() {
 				  { icon: Icons.Mail, val: 'info@operix-solutions.com', href: 'mailto:info@operix-solutions.com' },
 				  { icon: Icons.Phone, val: 'support@operix-solutions.com', href: 'mailto:support@operix-solutions.com' },
 				  { icon: Icons.FileText, val: 'subscription@operix-solutions.com', href: 'mailto:subscription@operix-solutions.com' },
-				  { icon: Icons.Globe, val: 'www.operix-solutions.com', href: 'https://www.operix-solutions.com', ext: true },
+				  { icon: Icons.Globe, val: 'www.operix-solutions.com', href: 'https://www.operix-solutions.com/about', ext: true },
 				].map((c, i) => (
 				  <a key={i} href={c.href} target={c.ext ? '_blank' : undefined} rel="noreferrer" className="contact-chip">
 					<span style={{ color: '#64748b' }}>{c.icon}</span>
