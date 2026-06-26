@@ -1,367 +1,803 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft, Zap, Users, Settings, Activity, CreditCard,
-  Check, Plus, Minus, Download, FileText, FlaskConical, Briefcase
-} from 'lucide-react';
 
-const OPS_API   = 'https://script.google.com/macros/s/AKfycby7xDEoYBzGM7sAAAkX0LDTKNHo63LjbgmaC-0VLXESPFj7BSl10GE-sIqM-Ss3wE8/exec';
-const DOCS_API  = 'https://script.google.com/macros/s/AKfycbxX5si41SuQj-yhGsrexa8snsaT0VgoPw0EHo7GGE9AAbEN6uKTA4qpmA9jdQFJpEC_/exec';
+const OPS_API  = 'https://script.google.com/macros/s/AKfycby7xDEoYBzGM7sAAAkX0LDTKNHo63LjbgmaC-0VLXESPFj7BSl10GE-sIqM-Ss3wE8/exec';
+const DOCS_API = 'https://script.google.com/macros/s/AKfycbxX5si41SuQj-yhGsrexa8snsaT0VgoPw0EHo7GGE9AAbEN6uKTA4qpmA9jdQFJpEC_/exec';
 const TARGET_EMAIL = 'operixsolution@gmail.com';
-const VAT_RATE  = 0.15;
+const VAT_RATE = 0.15;
 
+// ─── USER TIER PLANS ───────────────────────────────────────────────────────────
+// Single full package — price scales with number of user accounts
+const USER_TIERS = [
+  {
+	key: 'starter',
+	users: '1 – 5',
+	usersAr: '١ – ٥',
+	maxUsers: 5,
+	label: { en: 'Starter', ar: 'المبتدئ' },
+	tagline: { en: 'Clinics & small practices', ar: 'العيادات والممارسات الصغيرة' },
+	priceMonthly: 1200,
+	accent: '#10b981',   // emerald
+	badge: null,
+  },
+  {
+	key: 'clinic',
+	users: '6 – 20',
+	usersAr: '٦ – ٢٠',
+	maxUsers: 20,
+	label: { en: 'Clinic', ar: 'العيادة' },
+	tagline: { en: 'Polyclinics & medical centers', ar: 'المراكز الطبية والعيادات المتعددة' },
+	priceMonthly: 2800,
+	accent: '#3b82f6',   // blue
+	badge: null,
+  },
+  {
+	key: 'hospital',
+	users: '21 – 100',
+	usersAr: '٢١ – ١٠٠',
+	maxUsers: 100,
+	label: { en: 'Hospital', ar: 'المستشفى' },
+	tagline: { en: 'Mid-size hospitals & groups', ar: 'المستشفيات المتوسطة والمجموعات' },
+	priceMonthly: 6500,
+	accent: '#a855f7',   // purple
+	badge: { en: 'Most Popular', ar: 'الأكثر طلباً' },
+  },
+  {
+	key: 'enterprise',
+	users: '101+',
+	usersAr: '١٠١+',
+	maxUsers: null,
+	label: { en: 'Enterprise', ar: 'المؤسسي' },
+	tagline: { en: 'Large hospital networks', ar: 'شبكات المستشفيات الكبرى' },
+	priceMonthly: null,  // custom
+	accent: '#e11d48',   // crimson
+	badge: { en: 'Custom Quote', ar: 'سعر مخصص' },
+  },
+];
+
+// Every tier includes the full OPERIX Care feature set
+const ALL_FEATURES = {
+  en: [
+	{ cat: 'Clinical', items: ['Voice-to-Text Clinical Dictation', 'Smart Admissions & OCR Triage', 'Doctor & Nurse Portals', 'Patient History & Records', 'Encrypted PDF Patient Files'] },
+	{ cat: 'Operations', items: ['Real-time Blood Bank Vault', 'Dynamic Pharmacy Cart & Billing', 'Diagnostic Queue Routing', 'Lab & Radiology Workflow'] },
+	{ cat: 'Admin & HR', items: ['Role-Based Access Control', 'Employee Directory & Payroll', 'Financial Ledger & VAT Reports', 'ZATCA-Compliant Tax Invoices'] },
+	{ cat: 'Platform', items: ['Arabic RTL & English UI', '99.9% Uptime SLA', 'Saudi-hosted Data Centers', '24 / 7 Priority Support'] },
+  ],
+  ar: [
+	{ cat: 'سريري', items: ['الإملاء الصوتي للملاحظات السريرية', 'الدخول الذكي عبر OCR', 'بوابات الأطباء والممرضين', 'سجلات وتاريخ المرضى', 'ملفات PDF مشفرة للمرضى'] },
+	{ cat: 'العمليات', items: ['بنك الدم الفوري', 'سلة الصيدلية والفواتير الآلية', 'توزيع قوائم التشخيص', 'سير عمل المختبرات والأشعة'] },
+	{ cat: 'الإدارة والموارد البشرية', items: ['التحكم في الصلاحيات حسب الدور', 'دليل الموظفين وكشف الرواتب', 'دفتر الأستاذ المالي وتقارير ضريبة القيمة المضافة', 'فواتير ضريبية متوافقة مع زاتكا'] },
+	{ cat: 'المنصة', items: ['واجهة عربية وإنجليزية', 'اتفاقية خدمة 99.9% وقت تشغيل', 'مراكز بيانات داخل المملكة', 'دعم فني على مدار الساعة'] },
+  ],
+};
+
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+const Icon = {
+  ArrowLeft: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  ArrowRight: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+  Check: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  Globe: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  Heart: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>,
+  Mail: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+  Shield: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Zap: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  Star: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  Download: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  FileText: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  ExternalLink: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+  HelpCircle: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  Lock: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  X: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  CreditCard: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  Building: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="18" height="18" rx="1"/><path d="M10 3v4"/><path d="M14 3v4"/><path d="M10 11h4"/><path d="M10 15h4"/><path d="M2 7h18"/></svg>,
+};
+
+// ─── SUPPORT MODAL ────────────────────────────────────────────────────────────
+function SupportModal({ isAr, onClose }) {
+  const contacts = [
+	{ icon: Icon.Mail,       label: isAr ? 'الاستفسارات العامة' : 'General Inquiries',  value: 'info@operix-solutions.com',         href: 'mailto:info@operix-solutions.com',         accent: '#e11d48' },
+	{ icon: Icon.HelpCircle, label: isAr ? 'الدعم الفني'        : 'Technical Support',   value: 'support@operix-solutions.com',      href: 'mailto:support@operix-solutions.com',      accent: '#a855f7' },
+	{ icon: Icon.CreditCard, label: isAr ? 'الاشتراكات'          : 'Subscriptions',       value: 'subscription@operix-solutions.com', href: 'mailto:subscription@operix-solutions.com', accent: '#3b82f6' },
+	{ icon: Icon.Globe,      label: isAr ? 'الموقع الإلكتروني'  : 'Website',             value: 'www.operix-solutions.com',          href: 'https://www.operix-solutions.com',         accent: '#10b981', ext: true },
+  ];
+  return (
+	<div style={{ position:'fixed', inset:0, background:'rgba(10,10,30,0.78)', backdropFilter:'blur(6px)', zIndex:9998, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }} onClick={onClose}>
+	  <div style={{ background:'#fff', borderRadius:'20px', width:'100%', maxWidth:'440px', overflow:'hidden', boxShadow:'0 32px 64px rgba(0,0,0,0.28)' }} onClick={e=>e.stopPropagation()}>
+		<div style={{ background:'linear-gradient(135deg,#e11d48,#a855f7)', padding:'22px 26px 18px', position:'relative' }}>
+		  <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+			<div style={{ background:'rgba(255,255,255,0.2)', padding:'8px', borderRadius:'10px', color:'#fff' }}>{Icon.HelpCircle}</div>
+			<div>
+			  <h3 style={{ margin:0, fontSize:'17px', fontWeight:800, color:'#fff' }}>{isAr ? 'مركز الدعم' : 'Support Center'}</h3>
+			  <p style={{ margin:0, fontSize:'12px', color:'rgba(255,255,255,0.75)', marginTop:'2px' }}>{isAr ? 'نحن هنا على مدار الساعة' : 'We\'re here 24 / 7 for you'}</p>
+			</div>
+		  </div>
+		  <button onClick={onClose} style={{ position:'absolute', top:'14px', [isAr?'left':'right']:'14px', background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'8px', width:'30px', height:'30px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff' }}>{Icon.X}</button>
+		</div>
+		<div style={{ padding:'18px 24px 24px', display:'flex', flexDirection:'column', gap:'8px' }}>
+		  {contacts.map((c,i)=>(
+			<a key={i} href={c.href} target={c.ext?'_blank':undefined} rel="noreferrer"
+			  style={{ display:'flex', alignItems:'center', gap:'12px', padding:'12px 14px', borderRadius:'10px', border:`1px solid ${c.accent}22`, background:`${c.accent}08`, textDecoration:'none' }}>
+			  <div style={{ background:`${c.accent}18`, color:c.accent, padding:'7px', borderRadius:'8px', display:'flex' }}>{c.icon}</div>
+			  <div>
+				<div style={{ fontSize:'10px', fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px' }}>{c.label}</div>
+				<div style={{ fontSize:'13px', fontWeight:700, color:c.accent, marginTop:'2px' }}>{c.value}</div>
+			  </div>
+			  {c.ext && <div style={{ marginLeft:'auto', color:'#94a3b8' }}>{Icon.ExternalLink}</div>}
+			</a>
+		  ))}
+		  <button onClick={onClose} style={{ marginTop:'8px', width:'100%', padding:'11px', background:'linear-gradient(135deg,#e11d48,#a855f7)', color:'#fff', border:'none', borderRadius:'10px', fontSize:'14px', fontWeight:700, cursor:'pointer' }}>
+			{isAr ? 'إغلاق' : 'Close'}
+		  </button>
+		</div>
+	  </div>
+	</div>
+  );
+}
+
+// ─── TERMS MODAL ──────────────────────────────────────────────────────────────
+function TermsModal({ isAr, onClose }) {
+  const sections = isAr ? [
+	{ title:'١. القبول والاتفاقية', body:'باستخدامك منصة OPERIX Care فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت تستخدم المنصة نيابةً عن مؤسسة صحية فإن المؤسسة توافق أيضاً على هذه الشروط.' },
+	{ title:'٢. استخدام المنصة', body:'يُسمح باستخدام OPERIX Care للأغراض الطبية والإدارية المشروعة فقط. يُحظر استخدام المنصة في أنشطة غير قانونية أو انتهاك خصوصية المرضى.' },
+	{ title:'٣. الخصوصية وحماية البيانات', body:'نلتزم بسياسة صارمة لحماية البيانات وفقاً للوائح هيئة الصحة السعودية (CCHI) ومعايير HIPAA الدولية. يتم تشفير جميع بيانات المرضى وتخزينها في مراكز بيانات داخل المملكة.' },
+	{ title:'٤. الاشتراكات والأسعار', body:'تُحتسب رسوم الاشتراك شهرياً أو سنوياً وفقاً للباقة المختارة وعدد المستخدمين. تخضع جميع الأسعار لضريبة القيمة المضافة 15%. يحق لأوبيريكس تعديل الأسعار مع إشعار مسبق مدته 30 يوماً.' },
+	{ title:'٥. التعديلات على الشروط', body:'تحتفظ OPERIX Solutions بالحق في تعديل هذه الشروط في أي وقت. سيتم إخطارك بأي تغييرات جوهرية عبر البريد الإلكتروني المسجل.' },
+  ] : [
+	{ title:'1. Acceptance & Agreement', body:'By using the OPERIX Care platform, you agree to comply with these Terms of Use. If you are using the platform on behalf of a healthcare organization, the organization also agrees to these terms.' },
+	{ title:'2. Permitted Use', body:'OPERIX Care is authorized for lawful medical and administrative purposes only. Unauthorized access, data extraction, or use in illegal activities is strictly prohibited.' },
+	{ title:'3. Privacy & Data Protection', body:'We are committed to strict data protection per Saudi CCHI regulations and international HIPAA standards. All patient data is encrypted and stored in certified Saudi-hosted data centers.' },
+	{ title:'4. Subscriptions & Pricing', body:'Subscription fees are billed monthly or annually based on the selected user tier. All prices are subject to 15% VAT. OPERIX reserves the right to modify pricing with 30 days prior written notice.' },
+	{ title:'5. Modifications to Terms', body:'OPERIX Solutions reserves the right to modify these Terms at any time. You will be notified of any material changes via your registered email address.' },
+  ];
+  return (
+	<div style={{ position:'fixed', inset:0, background:'rgba(10,10,30,0.8)', backdropFilter:'blur(6px)', zIndex:9998, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }} onClick={onClose}>
+	  <div style={{ background:'#fff', borderRadius:'20px', width:'100%', maxWidth:'540px', maxHeight:'85vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 32px 64px rgba(0,0,0,0.28)', direction:isAr?'rtl':'ltr' }} onClick={e=>e.stopPropagation()}>
+		<div style={{ background:'linear-gradient(135deg,#1e1b4b,#4c1d95)', padding:'22px 26px', position:'relative', flexShrink:0 }}>
+		  <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+			<div style={{ background:'rgba(255,255,255,0.15)', padding:'8px', borderRadius:'10px', color:'#c4b5fd' }}>{Icon.FileText}</div>
+			<div>
+			  <h3 style={{ margin:0, fontSize:'16px', fontWeight:800, color:'#fff' }}>{isAr ? 'شروط الاستخدام وسياسة الخصوصية' : 'Terms of Use & Privacy Policy'}</h3>
+			  <p style={{ margin:0, fontSize:'11px', color:'rgba(196,181,253,0.8)', marginTop:'2px' }}>{isAr ? 'تاريخ السريان: ١ يناير ٢٠٢٦' : 'Effective Date: January 1, 2026'}</p>
+			</div>
+		  </div>
+		  <button onClick={onClose} style={{ position:'absolute', top:'14px', [isAr?'left':'right']:'14px', background:'rgba(255,255,255,0.15)', border:'none', borderRadius:'8px', width:'30px', height:'30px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#c4b5fd' }}>{Icon.X}</button>
+		</div>
+		<div style={{ overflowY:'auto', padding:'22px 26px', flex:1 }}>
+		  {sections.map((s,i)=>(
+			<div key={i} style={{ marginBottom:'18px' }}>
+			  <h4 style={{ margin:'0 0 6px 0', fontSize:'13px', fontWeight:700, color:'#4c1d95' }}>{s.title}</h4>
+			  <p style={{ margin:0, fontSize:'13px', color:'#475569', lineHeight:1.7 }}>{s.body}</p>
+			</div>
+		  ))}
+		  <div style={{ background:'#fdf4ff', border:'1px solid #e9d5ff', borderRadius:'10px', padding:'12px 14px', marginTop:'4px', display:'flex', gap:'10px', alignItems:'flex-start' }}>
+			<div style={{ color:'#a855f7', flexShrink:0, marginTop:'2px' }}>{Icon.Lock}</div>
+			<p style={{ margin:0, fontSize:'12px', color:'#6d28d9', lineHeight:1.6 }}>
+			  {isAr ? 'نحن لا نبيع بيانات المرضى أو نشاركها مع أطراف ثالثة. جميع البيانات مشفرة ومحمية.' : "We never sell or share patient data with third parties. All data is encrypted and protected."}
+			</p>
+		  </div>
+		</div>
+		<div style={{ padding:'14px 24px', borderTop:'1px solid #e2e8f0', flexShrink:0 }}>
+		  <button onClick={onClose} style={{ width:'100%', padding:'11px', background:'linear-gradient(135deg,#4c1d95,#a855f7)', color:'#fff', border:'none', borderRadius:'10px', fontSize:'14px', fontWeight:700, cursor:'pointer' }}>
+			{isAr ? 'أوافق' : 'I Understand'}
+		  </button>
+		</div>
+	  </div>
+	</div>
+  );
+}
+
+// ─── FEATURE TABLE COMPARISON ─────────────────────────────────────────────────
+function FeatureTable({ isAr }) {
+  const cats = ALL_FEATURES[isAr ? 'ar' : 'en'];
+  return (
+	<div style={{ maxWidth:'860px', margin:'0 auto', padding:'0 24px 80px' }}>
+	  <h2 style={{ textAlign:'center', fontSize:'28px', fontWeight:800, letterSpacing:'-0.8px', color:'#0a0a0a', marginBottom:'6px' }}>
+		{isAr ? 'كل ما تحتاجه — في كل الباقات' : 'Everything included — in every tier'}
+	  </h2>
+	  <p style={{ textAlign:'center', color:'#64748b', fontSize:'15px', marginBottom:'40px' }}>
+		{isAr ? 'ليس عليك الاختيار بين الميزات. جميع الباقات تشمل المنصة الكاملة.' : 'You never choose between features. Every plan ships the full platform.'}
+	  </p>
+	  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'16px' }}>
+		{cats.map((cat, ci) => (
+		  <div key={ci} style={{ background:'#fff', border:'1px solid #f1f5f9', borderRadius:'14px', padding:'20px', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+			<div style={{ fontSize:'10px', fontWeight:800, color:'#e11d48', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'14px', display:'flex', alignItems:'center', gap:'6px' }}>
+			  <span style={{ width:'18px', height:'2px', background:'linear-gradient(to right,#e11d48,#a855f7)', borderRadius:'2px', display:'inline-block' }} />
+			  {cat.cat}
+			</div>
+			<ul style={{ listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:'10px' }}>
+			  {cat.items.map((f, fi) => (
+				<li key={fi} style={{ display:'flex', alignItems:'flex-start', gap:'8px', fontSize:'13px', color:'#334155', fontWeight:500 }}>
+				  <span style={{ color:'#10b981', marginTop:'1px', flexShrink:0 }}>{Icon.Check}</span>
+				  {f}
+				</li>
+			  ))}
+			</ul>
+		  </div>
+		))}
+	  </div>
+	</div>
+  );
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function Subscription() {
   const navigate = useNavigate();
-
+  const [lang, setLang]                 = useState('en');
   const [billingCycle, setBillingCycle] = useState('monthly');
-  const [showModal, setShowModal] = useState(false);
+  const [selectedTier, setSelectedTier] = useState(null);   // tier key
+  const [showModal, setShowModal]       = useState(false);
+  const [showSupport, setShowSupport]   = useState(false);
+  const [showTerms, setShowTerms]       = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', company: '', employees: '1-50' });
-  const [activeView, setActiveView] = useState('modules'); // 'modules' | 'ledger'
+  const [formData, setFormData]         = useState({ name:'', email:'', company:'', facilitySize:'', message:'' });
 
-  // Refactored to match OPERIX Care actual modules and brand colors
-  const [modules, setModules] = useState({
-	hris: { active: false, price: 1500, title: 'OPERIX HR & Finance', desc: 'Core human capital management, payroll & financial ledger.', color: 'text-emerald-400', bg: 'bg-emerald-500', icon: <Briefcase size={24} /> },
-	operations: { active: false, price: 1200, title: 'OPERIX Labs & Pharmacy', desc: 'Inventory tracking, diagnostic queues & automated billing.', color: 'text-amber-400', bg: 'bg-amber-500', icon: <FlaskConical size={24} /> },
-	care: { active: true, price: 4500, title: 'OPERIX Care (Core HIS)', desc: 'Complete Hospital Information System, Triage & Doctor portlas.', color: 'text-blue-500', bg: 'bg-blue-600', icon: <Activity size={24} /> },
-  });
+  const isAr  = lang === 'ar';
+  const t     = (en, ar) => isAr ? ar : en;
 
-  const getPrice = (base) => billingCycle === 'yearly' ? base * 0.8 : base;
+  // Price helpers
+  const getPrice = (base) => billingCycle === 'yearly' ? Math.round(base * 0.8) : base;
+  const addVat   = (price) => Math.round(price * (1 + VAT_RATE));
 
-  const calculateFinancials = () => {
-	const subtotal = Object.values(modules).reduce((acc, m) => m.active ? acc + getPrice(m.price) : acc, 0);
-	const vat = subtotal * VAT_RATE;
-	return { subtotal, vat, grandTotal: subtotal + vat };
-  };
+  const activeTier = selectedTier ? USER_TIERS.find(t => t.key === selectedTier) : null;
 
-  const toggleModule = (key) =>
-	setModules(prev => ({ ...prev, [key]: { ...prev[key], active: !prev[key].active } }));
-
-  // ─── CHECKOUT ENGINE ───
-  const handleCheckoutSubmit = async (e) => {
+  // ── Checkout submit ──────────────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
 	e.preventDefault();
+	if (!selectedTier) return;
 	setIsSubmitting(true);
-	const fin = calculateFinancials();
-	const cycleText = billingCycle === 'yearly' ? 'Annual Billing (20% Discount)' : 'Monthly Billing';
-	const selectedModules = Object.values(modules).filter(m => m.active).map(m => m.title).join(', ');
 
-	const adminBody = `NEW ENTERPRISE SUBSCRIPTION REQUEST\n\nContact: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.company}\nSize: ${formData.employees}\n\nModules: ${selectedModules}\nCycle: ${cycleText}\nSubtotal: SAR ${fin.subtotal.toLocaleString()}\nVAT: SAR ${fin.vat.toLocaleString()}\nTotal: SAR ${fin.grandTotal.toLocaleString()} / mo`;
+	const tier  = USER_TIERS.find(t => t.key === selectedTier);
+	const price = tier.priceMonthly ? getPrice(tier.priceMonthly) : null;
+	const total = price ? addVat(price) : null;
+	const cycle = billingCycle === 'yearly' ? t('Annual (20% off)', 'سنوي (خصم 20%)') : t('Monthly', 'شهري');
+	const planLabel = `OPERIX Care – ${tier.label[lang]} (${tier.users} ${t('users', 'مستخدم')})`;
 
-	const htmlInvoice = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;border:1px solid #1e293b;padding:40px;border-radius:12px;background:#0f172a;color:#f8fafc"><h1 style="color:#ffffff;margin-top:0">OPERIX Solutions</h1><p style="color:#94a3b8;font-size:14px">Enterprise Subscription Quotation (inc. 15% VAT)</p><hr style="border:none;border-top:1px solid #334155;margin:24px 0"/><h3 style="color:#ffffff">Client Details</h3><p style="font-size:14px;line-height:1.6;color:#cbd5e1"><strong>Company:</strong> ${formData.company}<br/><strong>Contact:</strong> ${formData.name}<br/><strong>Email:</strong> ${formData.email}</p><h3 style="color:#ffffff;margin-top:32px">Subscription Plan</h3><table style="width:100%;border-collapse:collapse;font-size:14px;color:#f8fafc">${Object.values(modules).filter(m=>m.active).map(m=>`<tr style="border-bottom:1px solid #334155"><td style="padding:12px;font-weight:bold">${m.title}</td><td style="padding:12px;text-align:right">SAR ${getPrice(m.price).toLocaleString()}</td></tr>`).join('')}</table><div style="margin-top:24px;padding:20px;background:#1e293b;border-radius:8px"><div style="display:flex;justify-content:space-between;font-size:14px;color:#cbd5e1"><span>VAT (15%)</span><span>SAR ${fin.vat.toLocaleString()}</span></div><hr style="border:none;border-top:1px solid #475569;margin:8px 0"/><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#ffffff"><span>Grand Total</span><span style="color:#3b82f6">SAR ${fin.grandTotal.toLocaleString()} /mo</span></div></div></div>`;
+	const adminBody =
+	  `NEW OPERIX CARE SUBSCRIPTION\n\n` +
+	  `Contact : ${formData.name}\nEmail   : ${formData.email}\nCompany : ${formData.company}\nSize    : ${formData.facilitySize}\n\n` +
+	  `Plan    : ${planLabel}\nCycle   : ${cycle}\n` +
+	  (price ? `Subtotal: SAR ${price.toLocaleString()}\nVAT 15% : SAR ${Math.round(price*VAT_RATE).toLocaleString()}\nTotal   : SAR ${total.toLocaleString()} /mo\n` : `Price   : Custom Quote Requested\n`) +
+	  (formData.message ? `\nMessage :\n${formData.message}` : '');
+
+	const htmlQuote = `
+<div style="font-family:sans-serif;max-width:620px;margin:0 auto;border:1px solid #1e1b4b;padding:40px;border-radius:16px;background:#0f0820;color:#f8fafc">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+	<h1 style="color:#fff;margin:0;font-size:24px">OPERIX Care</h1>
+	<span style="background:linear-gradient(135deg,#e11d48,#a855f7);padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;color:#fff">SUBSCRIPTION</span>
+  </div>
+  <p style="color:#94a3b8;font-size:13px;margin-bottom:28px">${isAr ? 'عرض أسعار الاشتراك (شامل ضريبة القيمة المضافة 15%)' : 'Subscription Quotation (inc. 15% VAT)'}</p>
+  <hr style="border:none;border-top:1px solid #1e293b;margin-bottom:24px"/>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;color:#f8fafc;margin-bottom:24px">
+	<tr style="border-bottom:1px solid #1e293b"><td style="padding:12px 0;color:#94a3b8">${isAr?'الباقة':'Plan'}</td><td style="padding:12px 0;text-align:right;font-weight:700">${planLabel}</td></tr>
+	<tr style="border-bottom:1px solid #1e293b"><td style="padding:12px 0;color:#94a3b8">${isAr?'دورة الفوترة':'Billing Cycle'}</td><td style="padding:12px 0;text-align:right">${cycle}</td></tr>
+	<tr style="border-bottom:1px solid #1e293b"><td style="padding:12px 0;color:#94a3b8">${isAr?'المنشأة':'Facility'}</td><td style="padding:12px 0;text-align:right">${formData.company}</td></tr>
+  </table>
+  ${price ? `
+  <div style="background:#1e1040;padding:20px;border-radius:12px">
+	<div style="display:flex;justify-content:space-between;font-size:14px;color:#94a3b8;margin-bottom:8px"><span>${isAr?'المبلغ قبل الضريبة':'Subtotal'}</span><span>SAR ${price.toLocaleString()}</span></div>
+	<div style="display:flex;justify-content:space-between;font-size:14px;color:#94a3b8;margin-bottom:12px"><span>${isAr?'ضريبة القيمة المضافة 15%':'VAT 15%'}</span><span>SAR ${Math.round(price*VAT_RATE).toLocaleString()}</span></div>
+	<hr style="border:none;border-top:1px solid #2d2060"/>
+	<div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:#fff;margin-top:12px"><span>${isAr?'الإجمالي':'Grand Total'}</span><span style="background:linear-gradient(to right,#e11d48,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">SAR ${total.toLocaleString()} /mo</span></div>
+  </div>` : `<div style="background:#1e1040;padding:20px;border-radius:12px;text-align:center;color:#a855f7;font-weight:700;font-size:16px">${isAr?'سيتم إعداد عرض سعر مخصص من فريقنا':'Our team will prepare a custom quotation'}</div>`}
+  <p style="color:#475569;font-size:12px;margin-top:28px">© 2026 OPERIX Solutions · operix-solutions.com</p>
+</div>`;
 
 	try {
-	  await fetch(OPS_API,  { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'sendEmail', to: TARGET_EMAIL, subject: `Subscription: ${formData.company}`, body: adminBody }) });
-	  await fetch(DOCS_API, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'sendContract', email: formData.email, subject: 'Your OPERIX Subscription Quotation', htmlBody: htmlInvoice }) });
-	  alert(`Success! Quotation sent to ${formData.email}. Our team will contact you shortly.`);
+	  await fetch(OPS_API,  { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({ action:'sendEmail', to:TARGET_EMAIL, subject:`OPERIX Care Subscription – ${formData.company}`, body:adminBody }) });
+	  await fetch(DOCS_API, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({ action:'sendContract', email:formData.email, subject:t('Your OPERIX Care Subscription Quotation','عرض اشتراك أوبيريكس كير'), htmlBody:htmlQuote }) });
+	  alert(t(`Quotation sent to ${formData.email}. Our team will be in touch shortly.`, `تم إرسال العرض إلى ${formData.email}. سيتواصل معك فريقنا قريباً.`));
 	  setShowModal(false);
-	  navigate('/');
+	  setFormData({ name:'', email:'', company:'', facilitySize:'', message:'' });
 	} catch {
-	  alert('Error processing request. Please try again.');
+	  alert(t('Error sending request. Please try again.', 'حدث خطأ. يرجى المحاولة مرة أخرى.'));
 	} finally {
 	  setIsSubmitting(false);
 	}
   };
 
-  const fin = calculateFinancials();
-  const activeCount = Object.values(modules).filter(m => m.active).length;
-
-  const features = {
-	hris:       ['Employee Self-Service & Directory', 'Automated Payroll & Allowances', 'Financial Master Ledger'],
-	operations: ['Real-time Blood Bank Vault', 'Dynamic Pharmacy Cart Billing', 'Diagnostic Queue Routing'],
-	care:       ['Voice-to-Text Clinical Dictation', 'Smart Admissions & Triage', 'Encrypted PDF Patient Records'],
-  };
+  // ── Computed financials ──────────────────────────────────────────────────────
+  const tierPrice = activeTier?.priceMonthly ? getPrice(activeTier.priceMonthly) : null;
+  const tierVat   = tierPrice ? Math.round(tierPrice * VAT_RATE) : null;
+  const tierTotal = tierPrice ? tierPrice + tierVat : null;
 
   return (
-	<div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 font-sans overflow-x-hidden animate-in fade-in pb-32 transition-colors duration-300">
+	<div style={{
+	  minHeight:'100vh', background:'#f8fafc', color:'#111',
+	  direction: isAr ? 'rtl' : 'ltr',
+	  fontFamily: isAr ? "'Noto Sans Arabic',system-ui,sans-serif" : "'Inter',system-ui,sans-serif",
+	}}>
 
-	  {/* ── NAVBAR ── */}
-	  <nav className="sticky top-0 z-50 px-8 py-4 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-		<button onClick={() => navigate('/')} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
-		  <ArrowLeft size={16} /> Back to Platform
+	  {/* ── GLOBAL STYLES ─────────────────────────────────────────────────── */}
+	  <style>{`
+		@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Arabic:wght@400;500;600;700;800;900&display=swap');
+		* { box-sizing:border-box; }
+		@keyframes heartbeat { 0%,100%{transform:scale(1)} 15%{transform:scale(1.3)} 30%{transform:scale(0.95)} 45%{transform:scale(1.15)} }
+		@keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+		@keyframes shimmer  { 0%{background-position:200% center} 100%{background-position:-200% center} }
+		@keyframes ecgDraw  {
+		  0%  { stroke-dasharray:0 600; opacity:1; }
+		  70% { stroke-dasharray:600 600; opacity:1; }
+		  90% { opacity:0.3; }
+		  100%{ stroke-dasharray:600 600; opacity:1; }
+		}
+		.tier-card { transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); cursor:pointer; }
+		.tier-card:hover:not(.selected) { transform:translateY(-4px); }
+		.tier-card.selected { transform:translateY(-6px); }
+		.med-input:focus { outline:none; border-color:#e11d48 !important; box-shadow:0 0 0 3px rgba(225,29,72,0.1) !important; }
+		.footer-link { color:#94a3b8; font-size:12px; text-decoration:none; font-weight:500; }
+		.footer-link:hover { color:#e11d48; }
+		.contact-chip { display:flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid #e2e8f0;border-radius:7px;background:#f8fafc;color:#475569;font-size:11px;font-weight:600;text-decoration:none; }
+		.contact-chip:hover { border-color:#fecdd3;background:#fff1f2;color:#e11d48; }
+		.animate-in { animation: fadeUp 0.45s ease both; }
+	  `}</style>
+
+	  {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
+	  <nav style={{
+		display:'flex', justifyContent:'space-between', alignItems:'center',
+		padding:'14px 32px', background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)',
+		borderBottom:'1px solid #f1f5f9', position:'sticky', top:0, zIndex:100,
+		boxShadow:'0 1px 20px rgba(0,0,0,0.05)'
+	  }}>
+		<button onClick={()=>navigate('/')} style={{ background:'transparent', border:'1px solid #e2e8f0', borderRadius:'8px', padding:'7px 14px', cursor:'pointer', display:'flex', alignItems:'center', gap:'7px', fontSize:'13px', fontWeight:700, color:'#475569' }}>
+		  {isAr ? Icon.ArrowRight : Icon.ArrowLeft} {t('Back to Platform','العودة للمنصة')}
 		</button>
-		<div className="flex items-center gap-2.5">
-		  <span className="text-blue-500"><Zap size={20} /></span>
-		  <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white">OPERIX Ecosystem</span>
+		<div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+		  <span style={{ color:'#e11d48', animation:'heartbeat 1.4s ease-in-out infinite', display:'flex' }}>{Icon.Heart}</span>
+		  <span style={{ fontSize:'17px', fontWeight:900, letterSpacing:'-0.5px', color:'#0a0a0a' }}>
+			OPERIX <span style={{ background:'linear-gradient(to right,#e11d48,#a855f7)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>CARE</span>
+		  </span>
+		</div>
+		<div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+		  <button onClick={()=>setLang(isAr?'en':'ar')} style={{ background:'transparent', border:'1px solid #e2e8f0', borderRadius:'6px', padding:'6px 10px', color:'#64748b', cursor:'pointer', display:'flex', alignItems:'center', gap:'6px', fontSize:'13px', fontWeight:600 }}>
+			{Icon.Globe} {isAr?'EN':'AR'}
+		  </button>
+		  <button onClick={()=>setShowSupport(true)} style={{ background:'transparent', border:'1px solid #fecdd3', borderRadius:'6px', padding:'6px 12px', color:'#e11d48', fontWeight:600, fontSize:'13px', cursor:'pointer', display:'flex', alignItems:'center', gap:'6px' }}>
+			{Icon.HelpCircle} {t('Support','الدعم')}
+		  </button>
 		</div>
 	  </nav>
 
-	  {/* ── HEADER ── */}
-	  <div className="max-w-7xl mx-auto px-6 pt-12 pb-6 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 relative">
-		<div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+	  {/* ── HERO HEADER ───────────────────────────────────────────────────── */}
+	  <div style={{ background:'linear-gradient(180deg,#fff 0%,#f8fafc 100%)', borderBottom:'1px solid #f1f5f9', padding:'60px 24px 52px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+		{/* BG ECG */}
+		<svg style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', opacity:0.04, pointerEvents:'none' }} width="900" height="80" viewBox="0 0 900 80">
+		  <path d="M0,40 L180,40 L210,5 L235,75 L260,18 L280,62 L300,40 L900,40" fill="none" stroke="#e11d48" strokeWidth="2.5" strokeLinecap="round" style={{ animation:'ecgDraw 2.5s ease-in-out infinite' }} />
+		</svg>
 
-		<h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white relative z-10">
-		  Manage your integrated <br className="hidden md:block"/> enterprise architecture.
+		{/* Badge */}
+		<div style={{ display:'inline-flex', alignItems:'center', gap:'8px', border:'1px solid #fecdd3', background:'#fff1f2', padding:'5px 14px', borderRadius:'99px', fontSize:'11px', fontWeight:700, color:'#e11d48', marginBottom:'22px' }}>
+		  <span style={{ animation:'heartbeat 1.4s ease-in-out infinite', display:'flex' }}>{Icon.Heart}</span>
+		  {t('OPERIX Care — Full Clinical Platform','أوبيريكس كير — المنصة الطبية الكاملة')}
+		</div>
+
+		<h1 style={{ fontSize:isAr?'38px':'44px', fontWeight:900, letterSpacing:'-1.5px', margin:'0 0 14px', lineHeight:1.08, color:'#0a0a0a' }}>
+		  {t('One platform. Every role.','منصة واحدة. كل الأدوار.')}<br/>
+		  <span style={{ background:'linear-gradient(135deg,#e11d48,#a855f7)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+			{t('Priced by your team size.','السعر حسب حجم فريقك.')}
+		  </span>
 		</h1>
+		<p style={{ color:'#64748b', fontSize:'16px', maxWidth:'560px', margin:'0 auto 36px', lineHeight:1.65 }}>
+		  {t('Every subscription includes the complete OPERIX Care feature set — clinical, operational, administrative. The only variable is the number of user accounts.',
+			 'كل اشتراك يشمل المنصة الكاملة — سريري، تشغيلي، إداري. المتغير الوحيد هو عدد حسابات المستخدمين.')}
+		</p>
 
-		{/* Billing Toggle */}
-		<div className="inline-flex p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md relative z-10 shadow-sm">
-		  {['monthly', 'yearly'].map(cycle => (
-			<button
-			  key={cycle}
-			  onClick={() => setBillingCycle(cycle)}
-			  className={`px-8 py-2.5 rounded-xl text-sm font-black transition-all ${billingCycle === cycle ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'}`}
-			>
-			  {cycle === 'monthly' ? 'Monthly' : (
-				<span className="flex items-center gap-2">
-				  Annual
-				  <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">-20%</span>
+		{/* Billing toggle */}
+		<div style={{ display:'inline-flex', padding:'4px', borderRadius:'12px', border:'1px solid #e2e8f0', background:'#fff', boxShadow:'0 2px 8px rgba(0,0,0,0.05)', gap:'2px' }}>
+		  {['monthly','yearly'].map(cy=>(
+			<button key={cy} onClick={()=>setBillingCycle(cy)} style={{
+			  padding:'9px 22px', borderRadius:'9px', fontSize:'13px', fontWeight:700,
+			  border:'none', cursor:'pointer', transition:'all 0.2s',
+			  background: billingCycle===cy ? 'linear-gradient(135deg,#e11d48,#a855f7)' : 'transparent',
+			  color: billingCycle===cy ? '#fff' : '#64748b',
+			  boxShadow: billingCycle===cy ? '0 4px 10px rgba(225,29,72,0.3)' : 'none',
+			}}>
+			  {cy==='monthly' ? t('Monthly','شهري') : (
+				<span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+				  {t('Annual','سنوي')}
+				  <span style={{ background:'rgba(255,255,255,0.2)', borderRadius:'99px', padding:'2px 8px', fontSize:'10px', fontWeight:800 }}>{t('–20%','خصم 20%')}</span>
 				</span>
 			  )}
 			</button>
 		  ))}
 		</div>
-
-		{/* Sub-view Toggle */}
-		<div className="flex justify-center gap-3 border-b border-slate-200 dark:border-slate-800/60 pb-6 relative z-10 mt-8">
-		  <button onClick={() => setActiveView('modules')} className={`px-6 py-3 rounded-xl text-sm font-black transition-all flex items-center gap-2 border ${activeView === 'modules' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md border-transparent' : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-400'}`}>
-			<Zap size={16} /> Module Configurator
-		  </button>
-		  <button onClick={() => setActiveView('ledger')} className={`px-6 py-3 rounded-xl text-sm font-black transition-all flex items-center gap-2 border ${activeView === 'ledger' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md border-transparent' : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-400'}`}>
-			<FileText size={16} /> Financial Ledger
-		  </button>
-		</div>
 	  </div>
 
-	  <div className="max-w-7xl mx-auto px-6 space-y-8 relative z-10">
+	  {/* ── TIER CARDS ────────────────────────────────────────────────────── */}
+	  <section style={{ padding:'52px 24px 20px', maxWidth:'1140px', margin:'0 auto' }}>
+		<div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))', gap:'20px' }}>
+		  {USER_TIERS.map((tier) => {
+			const price    = tier.priceMonthly ? getPrice(tier.priceMonthly) : null;
+			const total    = price ? addVat(price) : null;
+			const isActive = selectedTier === tier.key;
+			return (
+			  <div
+				key={tier.key}
+				className={`tier-card${isActive?' selected':''} animate-in`}
+				onClick={()=>setSelectedTier(tier.key)}
+				style={{
+				  background:'#fff', borderRadius:'20px', overflow:'hidden',
+				  border: isActive ? `2px solid ${tier.accent}` : '2px solid #f1f5f9',
+				  boxShadow: isActive ? `0 16px 48px ${tier.accent}28` : '0 4px 16px rgba(0,0,0,0.05)',
+				  position:'relative', display:'flex', flexDirection:'column',
+				}}
+			  >
+				{/* Top accent bar */}
+				<div style={{ height:'4px', background: isActive ? tier.accent : '#f1f5f9', transition:'background 0.3s' }} />
 
-		{/* ── MODULE CONFIGURATOR VIEW ── */}
-		{activeView === 'modules' && (
-		  <div className="animate-in fade-in slide-in-from-bottom-4">
-			<div className="mb-6">
-			  <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900 dark:text-white">
-				<Zap size={24} className="text-blue-500" /> Ecosystem Modules
-			  </h2>
-			  <p className="mt-1 text-sm font-bold text-slate-500">
-				Select the modules to include in your enterprise workspace license.
+				{/* Badge */}
+				{tier.badge && (
+				  <div style={{ position:'absolute', top:'16px', [isAr?'left':'right']:'16px',
+					background: tier.key==='enterprise' ? 'linear-gradient(135deg,#e11d48,#be123c)' : 'linear-gradient(135deg,#a855f7,#7c3aed)',
+					color:'#fff', fontSize:'10px', fontWeight:800, padding:'3px 10px', borderRadius:'99px', letterSpacing:'0.5px'
+				  }}>
+					{tier.badge[lang]}
+				  </div>
+				)}
+
+				<div style={{ padding:'24px 24px 20px' }}>
+				  {/* Icon + label */}
+				  <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'16px' }}>
+					<div style={{ width:'40px', height:'40px', borderRadius:'10px', background:`${tier.accent}15`, display:'flex', alignItems:'center', justifyContent:'center', color:tier.accent, flexShrink:0 }}>
+					  {Icon.Users}
+					</div>
+					<div>
+					  <div style={{ fontSize:'16px', fontWeight:800, color:'#0a0a0a' }}>{tier.label[lang]}</div>
+					  <div style={{ fontSize:'11px', color:'#94a3b8', fontWeight:500, marginTop:'1px' }}>{tier.tagline[lang]}</div>
+					</div>
+				  </div>
+
+				  {/* Users range pill */}
+				  <div style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:`${tier.accent}10`, border:`1px solid ${tier.accent}30`, borderRadius:'8px', padding:'6px 12px', marginBottom:'20px' }}>
+					<span style={{ color:tier.accent }}>{Icon.Users}</span>
+					<span style={{ fontSize:'13px', fontWeight:700, color:tier.accent }}>
+					  {isAr ? tier.usersAr : tier.users} {t('users','مستخدم')}
+					</span>
+				  </div>
+
+				  {/* Price */}
+				  {price ? (
+					<div style={{ marginBottom:'20px' }}>
+					  <div style={{ display:'flex', alignItems:'baseline', gap:'4px' }}>
+						<span style={{ fontSize:'13px', fontWeight:700, color:'#94a3b8' }}>SAR</span>
+						<span style={{ fontSize:'40px', fontWeight:900, letterSpacing:'-2px', color:'#0a0a0a', lineHeight:1 }}>
+						  {price.toLocaleString()}
+						</span>
+						<span style={{ fontSize:'12px', fontWeight:600, color:'#94a3b8' }}>{t('/mo','/ شهر')}</span>
+					  </div>
+					  <div style={{ fontSize:'12px', color:'#94a3b8', marginTop:'4px' }}>
+						{t('SAR','ريال')} {total?.toLocaleString()} {t('incl. 15% VAT','شامل ضريبة 15%')}
+					  </div>
+					  {billingCycle==='yearly' && (
+						<div style={{ fontSize:'11px', color:'#64748b', marginTop:'3px', textDecoration:'line-through' }}>
+						  {t('SAR','ريال')} {tier.priceMonthly.toLocaleString()} {t('/mo (monthly rate)','/ شهر (السعر الشهري)')}
+						</div>
+					  )}
+					</div>
+				  ) : (
+					<div style={{ marginBottom:'20px' }}>
+					  <div style={{ fontSize:'32px', fontWeight:900, color:'#0a0a0a', letterSpacing:'-1px', lineHeight:1 }}>
+						{t('Custom','مخصص')}
+					  </div>
+					  <div style={{ fontSize:'12px', color:'#94a3b8', marginTop:'5px' }}>
+						{t('Tailored to your network','مصمم لشبكتك')}
+					  </div>
+					</div>
+				  )}
+
+				  {/* CTA button */}
+				  <button
+					onClick={(e)=>{ e.stopPropagation(); setSelectedTier(tier.key); setShowModal(true); }}
+					style={{
+					  width:'100%', padding:'11px', borderRadius:'10px', fontSize:'13px', fontWeight:700,
+					  border:'none', cursor:'pointer', transition:'all 0.2s',
+					  background: isActive ? tier.accent : `${tier.accent}12`,
+					  color: isActive ? '#fff' : tier.accent,
+					  boxShadow: isActive ? `0 4px 12px ${tier.accent}40` : 'none',
+					}}>
+					{tier.priceMonthly ? t('Get Started','ابدأ الآن') : t('Request Quote','طلب عرض سعر')}
+				  </button>
+				</div>
+
+				{/* Selection ring indicator */}
+				{isActive && (
+				  <div style={{ margin:'0 24px 20px', display:'flex', alignItems:'center', gap:'6px', color:tier.accent, fontSize:'12px', fontWeight:700 }}>
+					<div style={{ width:'8px', height:'8px', borderRadius:'50%', background:tier.accent, animation:'heartbeat 1.4s ease-in-out infinite' }} />
+					{t('Selected plan','الباقة المختارة')}
+				  </div>
+				)}
+			  </div>
+			);
+		  })}
+		</div>
+
+		{/* Savings callout for yearly */}
+		{billingCycle==='yearly' && (
+		  <div style={{ marginTop:'20px', textAlign:'center', padding:'12px 20px', background:'linear-gradient(135deg,rgba(16,185,129,0.08),rgba(59,130,246,0.06))', border:'1px solid rgba(16,185,129,0.2)', borderRadius:'12px', fontSize:'13px', fontWeight:600, color:'#059669', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
+			{Icon.Zap}
+			{t('Annual billing saves you up to SAR 15,600 per year on the Hospital plan.','الفوترة السنوية توفر لك حتى 15,600 ريال سنوياً على باقة المستشفى.')}
+		  </div>
+		)}
+	  </section>
+
+	  {/* ── FEATURE TABLE ─────────────────────────────────────────────────── */}
+	  <FeatureTable isAr={isAr} />
+
+	  {/* ── TRUST BAR ─────────────────────────────────────────────────────── */}
+	  <section style={{ background:'#fff', borderTop:'1px solid #f1f5f9', borderBottom:'1px solid #f1f5f9', padding:'28px 24px', marginBottom:'0' }}>
+		<div style={{ maxWidth:'860px', margin:'0 auto', display:'flex', justifyContent:'center', gap:'32px', flexWrap:'wrap', alignItems:'center' }}>
+		  {[
+			{ icon:Icon.Shield,  label:t('Saudi-hosted data','بيانات داخل المملكة') },
+			{ icon:Icon.Lock,    label:t('HIPAA + CCHI compliant','متوافق مع HIPAA و CCHI') },
+			{ icon:Icon.Zap,     label:t('99.9% uptime SLA','اتفاقية 99.9% وقت تشغيل') },
+			{ icon:Icon.Users,   label:t('24/7 clinical support','دعم سريري على مدار الساعة') },
+			{ icon:Icon.FileText,label:t('ZATCA tax invoices','فواتير ضريبية متوافقة مع زاتكا') },
+		  ].map((item,i)=>(
+			<div key={i} style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', fontWeight:600, color:'#475569' }}>
+			  <span style={{ color:'#e11d48' }}>{item.icon}</span> {item.label}
+			</div>
+		  ))}
+		</div>
+	  </section>
+
+	  {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
+	  <footer style={{ background:'#0a0a14', color:'#e2e8f0', padding:'52px 32px 0' }}>
+		<div style={{ maxWidth:'1100px', margin:'0 auto' }}>
+		  <div style={{ display:'grid', gridTemplateColumns: isAr ? 'repeat(3,1fr)' : '2fr 1fr 1.6fr', gap:'40px', paddingBottom:'40px', borderBottom:'1px solid #1e293b' }}>
+
+			{/* Brand */}
+			<div>
+			  <div style={{ fontSize:'17px', fontWeight:900, letterSpacing:'-0.5px', marginBottom:'12px' }}>
+				OPERIX <span style={{ background:'linear-gradient(to right,#e11d48,#a855f7)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>CARE</span>
+			  </div>
+			  <p style={{ color:'#64748b', fontSize:'13px', lineHeight:1.7, margin:'0 0 18px' }}>
+				{t('Powering the future of clinical care in the Arab world.','نبني مستقبل الرعاية الصحية الرقمية في العالم العربي.')}
 			  </p>
+			  <svg width="100" height="24" viewBox="0 0 100 24" style={{ opacity:0.3 }}>
+				<path d="M0,12 L22,12 L30,2 L37,22 L43,7 L48,17 L53,12 L100,12" fill="none" stroke="url(#fG)" strokeWidth="1.5" strokeLinecap="round"/>
+				<defs><linearGradient id="fG" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#e11d48"/><stop offset="100%" stopColor="#a855f7"/></linearGradient></defs>
+			  </svg>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-			  {Object.entries(modules).map(([key, mod]) => (
-				<div
-				  key={key}
-				  className={`p-8 rounded-3xl border shadow-sm transition-all flex flex-col bg-white dark:bg-slate-900/60 backdrop-blur-xl
-					${mod.active ? `border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/50` : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:-translate-y-1'}`
-				  }
-				>
-				  <div className="flex items-start justify-between mb-6">
-					<div className={`w-14 h-14 rounded-2xl ${mod.bg} text-white flex items-center justify-center shadow-lg transition-transform duration-300 ${mod.active ? 'scale-110' : ''}`}>
-					  {mod.icon}
-					</div>
-					{mod.active && (
-					  <span className="bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-						Installed
+			{/* Links */}
+			<div>
+			  <div style={{ fontSize:'10px', fontWeight:800, color:'#e11d48', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'14px' }}>{t('Platform','المنصة')}</div>
+			  <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+				{[
+				  { label:t('Features','المميزات'),          fn:()=>navigate('/') },
+				  { label:t('Pricing','الأسعار'),             fn:()=>{} },
+				  { label:t('Book a Demo','طلب عرض'),        fn:()=>setShowModal(true) },
+				  { label:t('Login','تسجيل الدخول'),         fn:()=>navigate('/login') },
+				].map((l,i)=>(
+				  <button key={i} onClick={l.fn} style={{ background:'none', border:'none', cursor:'pointer', padding:0, textAlign:isAr?'right':'left' }} className="footer-link">{l.label}</button>
+				))}
+			  </div>
+			</div>
+
+			{/* Contact */}
+			<div>
+			  <div style={{ fontSize:'10px', fontWeight:800, color:'#3b82f6', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'14px' }}>{t('Contact','التواصل')}</div>
+			  <div style={{ display:'flex', flexDirection:'column', gap:'7px' }}>
+				{[
+				  { icon:Icon.Mail,       val:'info@operix-solutions.com',         href:'mailto:info@operix-solutions.com' },
+				  { icon:Icon.HelpCircle, val:'support@operix-solutions.com',      href:'mailto:support@operix-solutions.com' },
+				  { icon:Icon.CreditCard, val:'subscription@operix-solutions.com', href:'mailto:subscription@operix-solutions.com' },
+				  { icon:Icon.Globe,      val:'www.operix-solutions.com',          href:'https://www.operix-solutions.com', ext:true },
+				].map((c,i)=>(
+				  <a key={i} href={c.href} target={c.ext?'_blank':undefined} rel="noreferrer" className="contact-chip">
+					<span style={{ color:'#64748b' }}>{c.icon}</span>
+					<span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.val}</span>
+					{c.ext && <span style={{ color:'#64748b' }}>{Icon.ExternalLink}</span>}
+				  </a>
+				))}
+			  </div>
+			</div>
+		  </div>
+
+		  {/* Bottom bar */}
+		  <div style={{ padding:'18px 0 22px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'10px' }}>
+			<div>
+			  <div style={{ color:'#475569', fontSize:'12px' }}>© 2026 OPERIX Solutions. {t('All rights reserved.','جميع الحقوق محفوظة.')}</div>
+			  <div style={{ color:'#334155', fontSize:'11px', marginTop:'2px' }}>{t('VAT Reg. No: 310XXXXXXXXX | Riyadh, Saudi Arabia','الرقم الضريبي: 310XXXXXXXXX | الرياض، المملكة العربية السعودية')}</div>
+			</div>
+			<div style={{ display:'flex', gap:'16px', alignItems:'center' }}>
+			  <button onClick={()=>setShowTerms(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#64748b', fontSize:'12px', fontWeight:600, display:'flex', alignItems:'center', gap:'5px' }} className="footer-link">
+				{Icon.FileText} {t('Terms & Privacy','الشروط والخصوصية')}
+			  </button>
+			  <button onClick={()=>setShowSupport(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#64748b', fontSize:'12px', fontWeight:600, display:'flex', alignItems:'center', gap:'5px' }} className="footer-link">
+				{Icon.HelpCircle} {t('Support','الدعم')}
+			  </button>
+			  <span style={{ color:'#e11d48', animation:'heartbeat 1.4s ease-in-out infinite', display:'flex' }}>{Icon.Heart}</span>
+			</div>
+		  </div>
+		</div>
+	  </footer>
+
+	  {/* ── STICKY CHECKOUT BAR ───────────────────────────────────────────── */}
+	  {selectedTier && (
+		<div style={{
+		  position:'fixed', bottom:'20px', left:'50%', transform:'translateX(-50%)',
+		  zIndex:50, width:'calc(100% - 48px)', maxWidth:'840px',
+		  background:'linear-gradient(135deg,#0f0820,#1a0a2e)',
+		  border:'1px solid rgba(168,85,247,0.25)', borderRadius:'20px',
+		  padding:'18px 28px', display:'flex', alignItems:'center', justifyContent:'space-between',
+		  boxShadow:'0 20px 60px rgba(0,0,0,0.35)', backdropFilter:'blur(12px)',
+		  flexWrap:'wrap', gap:'14px',
+		}}>
+		  <div>
+			<div style={{ fontSize:'12px', color:'#94a3b8', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'4px' }}>
+			  {t('Selected Plan','الباقة المختارة')} · OPERIX Care
+			</div>
+			<div style={{ display:'flex', alignItems:'baseline', gap:'8px', flexWrap:'wrap' }}>
+			  <span style={{ color:'#fff', fontWeight:900, fontSize:'22px', letterSpacing:'-0.5px' }}>
+				{activeTier?.label[lang]} — {isAr ? activeTier?.usersAr : activeTier?.users} {t('users','مستخدم')}
+			  </span>
+			  {tierTotal ? (
+				<span style={{ color:'#a78bfa', fontSize:'14px', fontWeight:700 }}>
+				  SAR {tierTotal.toLocaleString()} {t('/mo incl. VAT','/شهر شامل الضريبة')}
+				</span>
+			  ) : (
+				<span style={{ color:'#f43f5e', fontSize:'13px', fontWeight:700 }}>{t('Custom Quote','سعر مخصص')}</span>
+			  )}
+			</div>
+		  </div>
+		  <button
+			onClick={()=>setShowModal(true)}
+			style={{
+			  background:'linear-gradient(135deg,#e11d48,#a855f7)', color:'#fff',
+			  border:'none', padding:'13px 28px', borderRadius:'12px', fontSize:'14px',
+			  fontWeight:800, cursor:'pointer', whiteSpace:'nowrap',
+			  boxShadow:'0 6px 20px rgba(225,29,72,0.45)', flexShrink:0
+			}}>
+			{activeTier?.priceMonthly ? t('Proceed to Checkout','المتابعة للدفع') : t('Request Custom Quote','طلب عرض سعر')}
+		  </button>
+		</div>
+	  )}
+
+	  {/* ── CHECKOUT MODAL ────────────────────────────────────────────────── */}
+	  {showModal && selectedTier && (
+		<div style={{ position:'fixed', inset:0, background:'rgba(10,10,30,0.8)', backdropFilter:'blur(5px)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
+		  <div style={{ background:'#fff', borderRadius:'22px', width:'100%', maxWidth:'500px', maxHeight:'90vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 32px 80px rgba(0,0,0,0.3)' }}>
+
+			{/* Gradient strip */}
+			<div style={{ height:'4px', background:`linear-gradient(to right,#e11d48,${activeTier?.accent||'#a855f7'},#3b82f6)`, flexShrink:0 }} />
+
+			{/* Header */}
+			<div style={{ padding:'24px 28px 18px', borderBottom:'1px solid #f1f5f9', flexShrink:0 }}>
+			  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+				<div>
+				  <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px' }}>
+					<span style={{ color:'#e11d48', animation:'heartbeat 1.4s ease-in-out infinite', display:'flex' }}>{Icon.Heart}</span>
+					<h3 style={{ margin:0, fontSize:'19px', fontWeight:800, color:'#0a0a0a' }}>
+					  {activeTier?.priceMonthly ? t('Complete Subscription','إتمام الاشتراك') : t('Request a Quote','طلب عرض سعر')}
+					</h3>
+				  </div>
+				  <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'6px', flexWrap:'wrap' }}>
+					<span style={{ background:`${activeTier?.accent}15`, color:activeTier?.accent, border:`1px solid ${activeTier?.accent}30`, padding:'3px 10px', borderRadius:'99px', fontSize:'11px', fontWeight:700 }}>
+					  {activeTier?.label[lang]}
+					</span>
+					<span style={{ fontSize:'12px', color:'#94a3b8', fontWeight:600 }}>
+					  {isAr ? activeTier?.usersAr : activeTier?.users} {t('users','مستخدم')}
+					</span>
+					{tierTotal && (
+					  <span style={{ fontSize:'12px', color:'#0a0a0a', fontWeight:700 }}>
+						· SAR {tierTotal.toLocaleString()} {t('/mo','/ شهر')}
 					  </span>
 					)}
 				  </div>
-
-				  <h3 className="text-xl font-black text-slate-900 dark:text-white">{mod.title}</h3>
-				  <p className="text-xs font-bold mt-2 mb-6 text-slate-500">{mod.desc}</p>
-
-				  <ul className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-6 mb-8 flex-1">
-					{features[key].map((f, i) => (
-					  <li key={i} className="flex items-start gap-3 text-sm font-bold text-slate-600 dark:text-slate-300">
-						<Check size={16} className={`${mod.color} mt-0.5 shrink-0`} />
-						{f}
-					  </li>
-					))}
-				  </ul>
-
-				  <div className="text-4xl font-black font-mono mb-6 text-slate-900 dark:text-white tracking-tighter">
-					<span className="text-lg font-bold text-slate-400 tracking-normal mr-1">SAR</span>
-					{getPrice(mod.price).toLocaleString()}
-					<span className="text-sm font-bold ml-1 text-slate-400 tracking-normal">/mo</span>
-					{billingCycle === 'yearly' && (
-					  <div className="text-xs font-bold mt-2 text-slate-400 line-through tracking-normal">
-						SAR {mod.price.toLocaleString()} /mo
-					  </div>
-					)}
-				  </div>
-
-				  <button
-					onClick={() => toggleModule(key)}
-					className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 border
-					  ${mod.active
-						? 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-red-500 hover:border-red-200 dark:hover:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/10'
-						: 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-lg hover:opacity-90'
-					  }`}
-				  >
-					{mod.active ? (<><Minus size={16} /> Remove Module</>) : (<><Plus size={16} /> Add to Workspace</>)}
-				  </button>
 				</div>
-			  ))}
-			</div>
-		  </div>
-		)}
-
-		{/* ── LEDGER VIEW ── */}
-		{activeView === 'ledger' && (
-		  <div className="animate-in fade-in slide-in-from-bottom-4">
-			<div className="mb-6">
-			  <h2 className="text-2xl font-black flex items-center gap-2 text-slate-900 dark:text-white">
-				<FileText size={24} className="text-emerald-500" /> Financial Ledger
-			  </h2>
-			  <p className="mt-1 text-sm font-bold text-slate-500">
-				View and download your official OPERIX tax invoices.
-			  </p>
+				<button onClick={()=>setShowModal(false)} style={{ background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:'8px', width:'32px', height:'32px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#94a3b8', flexShrink:0 }}>
+				  {Icon.X}
+				</button>
+			  </div>
 			</div>
 
-			<div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden backdrop-blur-xl">
-			  <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-950/50">
-				<div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-xl"><CreditCard size={20} className="text-emerald-600 dark:text-emerald-400" /></div>
+			{/* Scrollable form body */}
+			<div style={{ overflowY:'auto', flex:1 }}>
+			  <form onSubmit={handleSubmit} style={{ padding:'22px 28px', display:'flex', flexDirection:'column', gap:'14px' }}>
+
+				<div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+				  {[
+					{ label:t('Full Name','الاسم الكامل'),         field:'name',        type:'text' },
+					{ label:t('Work Email','البريد الإلكتروني'),    field:'email',       type:'email' },
+					{ label:t('Healthcare Facility','المنشأة الطبية'), field:'company',   type:'text' },
+					{ label:t('Facility Size (beds)','حجم المنشأة (أسرة)'), field:'facilitySize', type:'text', placeholder:t('e.g. 120 beds','مثال: 120 سريراً') },
+				  ].map(({ label, field, type, placeholder })=>(
+					<div key={field}>
+					  <label style={{ display:'block', fontSize:'10px', fontWeight:700, color:'#475569', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'5px' }}>{label}</label>
+					  <input
+						type={type}
+						placeholder={placeholder||''}
+						value={formData[field]}
+						onChange={e=>setFormData({...formData,[field]:e.target.value})}
+						required={field!=='facilitySize'}
+						className="med-input"
+						style={{ width:'100%', padding:'10px 12px', border:'1px solid #e2e8f0', borderRadius:'8px', background:'#f8fafc', color:'#0a0a0a', fontSize:'13px', transition:'all 0.2s' }}
+					  />
+					</div>
+				  ))}
+				</div>
+
 				<div>
-				  <div className="font-black text-slate-900 dark:text-white">Invoice History</div>
-				  <div className="text-xs font-bold text-slate-500">ZATCA-compliant tax invoices for your workspace.</div>
-				</div>
-			  </div>
-			  <div className="overflow-x-auto">
-				<table className="w-full text-left">
-				  <thead>
-					<tr className="bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
-					  {['Invoice Ref', 'Issue Date', 'Ecosystem Licenses', 'Amount (inc VAT)', 'Status', 'Action'].map((h, i) => (
-						<th key={i} className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">{h}</th>
-					  ))}
-					</tr>
-				  </thead>
-				  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-					<tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-					  <td className="px-8 py-5 font-mono font-bold text-sm text-slate-900 dark:text-white">INV-2026-041</td>
-					  <td className="px-8 py-5 text-sm font-bold text-slate-500">01 Jun 2026</td>
-					  <td className="px-8 py-5 font-bold text-sm text-slate-900 dark:text-white">OPERIX Core Workspace</td>
-					  <td className="px-8 py-5 font-mono font-black text-sm text-slate-900 dark:text-white">SAR 16,560</td>
-					  <td className="px-8 py-5">
-						<span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">PAID</span>
-					  </td>
-					  <td className="px-8 py-5">
-						<button className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
-						  <Download size={14} /> PDF
-						</button>
-					  </td>
-					</tr>
-				  </tbody>
-				</table>
-			  </div>
-			</div>
-		  </div>
-		)}
-
-	  </div>
-
-	  {/* ── STICKY CHECKOUT FLOAT ── */}
-		<div className="fixed bottom-8 left-0 right-0 z-50 px-6 flex justify-center pointer-events-none animate-in slide-in-from-bottom-8">
-		  <div className="pointer-events-auto w-full max-w-5xl rounded-3xl px-8 py-6 flex flex-col md:flex-row items-center justify-between shadow-2xl border border-slate-800 bg-slate-900/95 dark:bg-[#111] backdrop-blur-2xl text-white">
-			<div className="text-center md:text-left mb-4 md:mb-0">
-			  <div className="font-mono text-3xl md:text-4xl font-black tracking-tighter">
-				SAR {fin.grandTotal.toLocaleString()}
-				<span className="text-sm font-bold ml-2 text-slate-400 tracking-normal">/mo</span>
-			  </div>
-			  <div className="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 mt-2 flex flex-wrap justify-center md:justify-start gap-2">
-				<span>{activeCount} Module{activeCount !== 1 ? 's' : ''} · Inc. 15% VAT</span>
-				{billingCycle === 'yearly' && (
-				  <span className="text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-500/30">· 20% Annual Discount</span>
-				)}
-			  </div>
-			</div>
-			<button
-			  onClick={() => setShowModal(true)}
-			  disabled={activeCount === 0}
-			  className="w-full md:w-auto bg-blue-600 text-white font-black px-10 py-4 rounded-2xl text-sm hover:bg-blue-500 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed whitespace-nowrap active:scale-95"
-			>
-			  Proceed to Checkout
-			</button>
-		  </div>
-		</div>
-
-	  {/* ── CHECKOUT MODAL ── */}
-	  {showModal && (
-		<div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 md:p-6 animate-in fade-in">
-		  <div className="w-full max-w-lg rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-2xl bg-white dark:bg-[#0f0f11] overflow-hidden relative">
-			<div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-500"></div>
-			
-			<div className="flex items-start justify-between mb-8 mt-2">
-			  <div>
-				<div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Checkout Details</div>
-				<div className="text-sm font-bold mt-1 text-slate-500">Complete your workspace configuration.</div>
-			  </div>
-			  <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl font-black transition-colors bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">×</button>
-			</div>
-
-			<form onSubmit={handleCheckoutSubmit} className="space-y-5">
-			  {[
-				{ label: 'Full Name',   field: 'name',    type: 'text',  placeholder: 'John Smith' },
-				{ label: 'Work Email',  field: 'email',   type: 'email', placeholder: 'john@company.com' },
-			  ].map(({ label, field, type, placeholder }) => (
-				<div key={field}>
-				  <label className="block text-[10px] font-black uppercase tracking-widest mb-2 text-slate-500">{label}</label>
-				  <input
-					type={type} placeholder={placeholder} value={formData[field]} onChange={e => setFormData({ ...formData, [field]: e.target.value })} required
-					className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:text-white"
+				  <label style={{ display:'block', fontSize:'10px', fontWeight:700, color:'#475569', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'5px' }}>
+					{t('Additional Notes (optional)','ملاحظات إضافية (اختياري)')}
+				  </label>
+				  <textarea
+					value={formData.message}
+					onChange={e=>setFormData({...formData,message:e.target.value})}
+					rows={3}
+					className="med-input"
+					placeholder={t('Any specific requirements or questions...','أي متطلبات أو أسئلة خاصة...')}
+					style={{ width:'100%', padding:'10px 12px', border:'1px solid #e2e8f0', borderRadius:'8px', background:'#f8fafc', color:'#0a0a0a', fontSize:'13px', resize:'vertical', transition:'all 0.2s', fontFamily:'inherit' }}
 				  />
 				</div>
-			  ))}
 
-			  <div className="grid grid-cols-2 gap-4">
-				{[
-				  { label: 'Company',      field: 'company',   type: 'text',   placeholder: 'Your Company' },
-				  { label: 'Company Size', field: 'employees', type: 'select', options: ['1-50','51-200','201-500','500+'] },
-				].map(({ label, field, type, placeholder, options }) => (
-				  <div key={field}>
-					<label className="block text-[10px] font-black uppercase tracking-widest mb-2 text-slate-500">{label}</label>
-					{type === 'select' ? (
-					  <select
-						value={formData[field]} onChange={e => setFormData({ ...formData, [field]: e.target.value })}
-						className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:text-white"
-					  >
-						{options.map(o => <option key={o} value={o}>{o} Beds</option>)}
-					  </select>
-					) : (
-					  <input
-						type={type} placeholder={placeholder} value={formData[field]} onChange={e => setFormData({ ...formData, [field]: e.target.value })} required
-						className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:text-white"
-					  />
-					)}
+				{/* Order summary card */}
+				<div style={{ background:'linear-gradient(135deg,#0f0820,#1a0a2e)', borderRadius:'12px', padding:'18px 20px', color:'#fff' }}>
+				  <div style={{ fontSize:'10px', fontWeight:800, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'12px', borderBottom:'1px solid rgba(255,255,255,0.08)', paddingBottom:'10px' }}>
+					{t('Order Summary','ملخص الطلب')}
 				  </div>
-				))}
-			  </div>
-
-			  {/* Order Summary */}
-			  <div className="rounded-2xl p-5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 mt-6">
-				<div className="text-[10px] font-black uppercase tracking-widest mb-4 text-slate-500 border-b border-slate-200 dark:border-slate-800 pb-2">Order Summary</div>
-				{Object.values(modules).filter(m => m.active).map(m => (
-				  <div key={m.title} className="flex justify-between text-sm font-bold mb-2.5 text-slate-900 dark:text-white">
-					<span>{m.title}</span>
-					<span className="text-slate-500 font-mono">SAR {getPrice(m.price).toLocaleString()}</span>
+				  <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', marginBottom:'8px', color:'rgba(255,255,255,0.75)' }}>
+					<span>OPERIX Care — {activeTier?.label[lang]}</span>
+					<span>{isAr ? activeTier?.usersAr : activeTier?.users} {t('users','مستخدم')}</span>
 				  </div>
-				))}
-				<div className="border-t border-slate-200 dark:border-slate-800 pt-3 mt-3 space-y-2">
-				  <div className="flex justify-between text-xs font-bold text-slate-500">
-					<span>Subtotal</span>
-					<span className="font-mono">SAR {fin.subtotal.toLocaleString()}</span>
+				  <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', color:'#64748b', marginBottom:'6px' }}>
+					<span>{t('Billing','الفوترة')}</span>
+					<span>{billingCycle==='yearly' ? t('Annual (–20%)','سنوي (خصم 20%)') : t('Monthly','شهري')}</span>
 				  </div>
-				  <div className="flex justify-between text-xs font-bold text-slate-500">
-					<span>VAT (15%)</span>
-					<span className="font-mono">SAR {fin.vat.toLocaleString()}</span>
-				  </div>
-				  <div className="flex justify-between items-end pt-3 border-t border-slate-200 dark:border-slate-800 mt-2">
-					<span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Grand Total</span>
-					<span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400 leading-none">
-					  SAR {fin.grandTotal.toLocaleString()}
-					</span>
-				  </div>
+				  {tierPrice ? (
+					<>
+					  <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', color:'#64748b', marginBottom:'6px' }}>
+						<span>{t('Subtotal','المبلغ')}</span><span>SAR {tierPrice.toLocaleString()}</span>
+					  </div>
+					  <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', color:'#64748b', marginBottom:'10px' }}>
+						<span>{t('VAT 15%','ضريبة 15%')}</span><span>SAR {tierVat?.toLocaleString()}</span>
+					  </div>
+					  <div style={{ display:'flex', justifyContent:'space-between', paddingTop:'10px', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
+						<span style={{ fontSize:'13px', fontWeight:700, color:'#fff' }}>{t('Grand Total /mo','الإجمالي / شهر')}</span>
+						<span style={{ fontSize:'18px', fontWeight:900, background:'linear-gradient(to right,#e11d48,#a855f7)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+						  SAR {tierTotal?.toLocaleString()}
+						</span>
+					  </div>
+					</>
+				  ) : (
+					<div style={{ textAlign:'center', padding:'10px', color:'#a855f7', fontWeight:700, fontSize:'14px' }}>
+					  {t('Custom enterprise pricing','تسعير مؤسسي مخصص')}
+					</div>
+				  )}
 				</div>
-			  </div>
 
-			  <button
-				type="submit"
-				disabled={isSubmitting}
-				className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-sm hover:opacity-90 transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-4 active:scale-95"
-			  >
-				{isSubmitting ? 'Processing Order…' : 'Confirm Subscription'}
-			  </button>
-			</form>
+				<button
+				  type="submit"
+				  disabled={isSubmitting}
+				  style={{
+					width:'100%', padding:'14px',
+					background: isSubmitting ? '#e9d5ff' : 'linear-gradient(135deg,#e11d48,#a855f7)',
+					color:'#fff', border:'none', borderRadius:'12px',
+					fontSize:'14px', fontWeight:800, cursor: isSubmitting?'default':'pointer',
+					boxShadow: isSubmitting?'none':'0 6px 20px rgba(225,29,72,0.35)',
+					display:'flex', alignItems:'center', justifyContent:'center', gap:'8px',
+					transition:'all 0.2s',
+				  }}>
+				  {isSubmitting ? (
+					<><span style={{ animation:'heartbeat 1.2s ease-in-out infinite', display:'flex' }}>{Icon.Heart}</span> {t('Sending…','جاري الإرسال…')}</>
+				  ) : (
+					activeTier?.priceMonthly ? t('Confirm & Send Quotation','تأكيد وإرسال العرض') : t('Send Quote Request','إرسال طلب العرض')
+				  )}
+				</button>
+
+				<p style={{ textAlign:'center', fontSize:'11px', color:'#94a3b8', margin:'0', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
+				  {Icon.Lock} {t('Your information is secure and never shared.','معلوماتك آمنة ولن تُشارك مع أي طرف.')}
+				</p>
+			  </form>
+			</div>
 		  </div>
 		</div>
 	  )}
+
+	  {/* ── SUPPORT / TERMS MODALS ────────────────────────────────────────── */}
+	  {showSupport && <SupportModal isAr={isAr} onClose={()=>setShowSupport(false)} />}
+	  {showTerms   && <TermsModal  isAr={isAr} onClose={()=>setShowTerms(false)}   />}
 
 	</div>
   );
