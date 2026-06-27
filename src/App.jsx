@@ -9,7 +9,7 @@ import Landing from './pages/Landing';
 import Subscription from './pages/Subscription';
 import WorkspaceDiscovery from './pages/auth/WorkspaceDiscovery'; 
 import Login from './pages/auth/Login';
-import SuperAdminLogin from './pages/auth/SuperAdminLogin'; // <--- NEW SAAS LOGIN
+import SuperAdminLogin from './pages/auth/SuperAdminLogin'; 
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminPortal from './pages/admin/SuperAdminPortal'; 
@@ -46,14 +46,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-// ... keep imports
-
 function AppRoutes() {
   const { user, role } = useAuth();
   const { t } = useLanguage();
 
   const getRedirectPath = (userRole) => {
-    // If a super_admin somehow hits the normal login flow, route them securely to the superadmin portal
     if (userRole === 'super_admin') return '/superadmin'; 
     if (userRole === 'admin') return '/admin';
     if (userRole === 'receptionist') return '/reception';
@@ -80,20 +77,21 @@ function AppRoutes() {
         {/* SAAS CONTROL PLANE (Only accessible by super_admin) */}
         <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminPortal /></ProtectedRoute>} />
         
-        <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/reception" element={<ProtectedRoute allowedRoles={['receptionist', 'admin']}><ReceptionPortal /></ProtectedRoute>} />
-        <Route path="/nurse" element={<ProtectedRoute allowedRoles={['nurse', 'admin']}><NursePortal /></ProtectedRoute>} />
-        <Route path="/doctor" element={<ProtectedRoute allowedRoles={['doctor', 'admin']}><DoctorWorkspace /></ProtectedRoute>} />
-        <Route path="/chemist" element={<ProtectedRoute allowedRoles={['chemist', 'admin']}><ChemistPortal /></ProtectedRoute>} />
-        <Route path="/operations" element={<ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse']}><OperationsBoard /></ProtectedRoute>} />
-        <Route path="/bloodbank" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}><BloodBank /></ProtectedRoute>} />
-        <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin']}><HumanResources /></ProtectedRoute>} />
-        <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin']}><FinanceDashboard /></ProtectedRoute>} />
+        {/* FIXED: Allowed super_admin to navigate here too if they need to check data */}
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/reception" element={<ProtectedRoute allowedRoles={['receptionist', 'admin', 'super_admin']}><ReceptionPortal /></ProtectedRoute>} />
+        <Route path="/nurse" element={<ProtectedRoute allowedRoles={['nurse', 'admin', 'super_admin']}><NursePortal /></ProtectedRoute>} />
+        <Route path="/doctor" element={<ProtectedRoute allowedRoles={['doctor', 'admin', 'super_admin']}><DoctorWorkspace /></ProtectedRoute>} />
+        <Route path="/chemist" element={<ProtectedRoute allowedRoles={['chemist', 'admin', 'super_admin']}><ChemistPortal /></ProtectedRoute>} />
+        <Route path="/operations" element={<ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse', 'super_admin']}><OperationsBoard /></ProtectedRoute>} />
+        <Route path="/bloodbank" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist', 'super_admin']}><BloodBank /></ProtectedRoute>} />
+        <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']}><HumanResources /></ProtectedRoute>} />
+        <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']}><FinanceDashboard /></ProtectedRoute>} />
         <Route path="/pathology" element={<DiagnosticLab labTypeOverride="Pathology" />} />
         <Route path="/radiology" element={<DiagnosticLab labTypeOverride="Radiology" />} />
         
-        <Route path="/appointments" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'receptionist']}><Appointments /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist']}><PatientHistory /></ProtectedRoute>} />
+        <Route path="/appointments" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'receptionist', 'super_admin']}><Appointments /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist', 'super_admin']}><PatientHistory /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'chemist', 'patient', 'nurse', 'receptionist', 'super_admin']}><Settings /></ProtectedRoute>} />
         
         <Route path="/patient" element={<ProtectedRoute allowedRoles={['patient']}><PatientPortal /></ProtectedRoute>} />
@@ -110,7 +108,6 @@ function AppRoutes() {
     </Routes>
   );
 }
-
 
 export default function App() {
   return (

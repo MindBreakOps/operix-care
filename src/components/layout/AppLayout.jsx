@@ -21,7 +21,6 @@ export default function AppLayout() {
   useEffect(() => {
 	const fetchProfile = async () => {
 	  if (!user) return;
-	  // Fetching Name AND pro_id from employee_records
 	  const { data } = await supabase
 		.from('profiles')
 		.select(`full_name, id, employee_records(pro_id)`)
@@ -44,24 +43,25 @@ export default function AppLayout() {
 
   const userRole = role?.toLowerCase() || ''; 
   
+  // FIXED: Admin Console path is now "/admin" instead of "/"
+  // FIXED: Added super_admin to allow full system navigation
   const navLinks = [
-	...(userRole === 'admin' ? [{ name: t("Admin Console"), path: "/", icon: LayoutDashboard, color: "text-indigo-400", bg: "bg-indigo-500" }] : []),
-	...(['admin', 'receptionist'].includes(userRole) ? [{ name: t("Front Desk"), path: "/reception", icon: Users, color: "text-emerald-400", bg: "bg-emerald-500" }] : []),
-	...(['admin', 'nurse'].includes(userRole) ? [{ name: t("Nurse Station"), path: "/nurse", icon: HeartPulse, color: "text-blue-400", bg: "bg-blue-500" }] : []),
-	...(['admin', 'doctor'].includes(userRole) ? [{ name: t("Doctor Workspace"), path: "/doctor", icon: Stethoscope, color: "text-indigo-400", bg: "bg-indigo-500" }] : []),
-	...(['admin', 'chemist'].includes(userRole) ? [{ name: t("Pharmacy Unit"), path: "/chemist", icon: FlaskConical, color: "text-amber-400", bg: "bg-amber-500" }] : []),
-	...(['admin', 'doctor', 'nurse'].includes(userRole) ? [{ name: t("Operations OR"), path: "/operations", icon: Activity, color: "text-red-400", bg: "bg-red-500" }] : []),
-	...(['admin', 'doctor', 'nurse', 'receptionist'].includes(userRole) ? [{ name: t("Blood Bank"), path: "/bloodbank", icon: Droplet, color: "text-rose-400", bg: "bg-rose-500" }] : []),
-	...(['admin', 'doctor', 'receptionist', 'nurse'].includes(userRole) ? [{ name: t("Patient History"), path: "/history", icon: History, color: "text-slate-300", bg: "bg-slate-500" }] : []),
-	...(userRole === 'admin' ? [{ name: t("Human Resources"), path: "/hr", icon: Briefcase, color: "text-teal-400", bg: "bg-teal-500" }] : []),
-	...(userRole === 'admin' ? [{ name: t("Financial Controller"), path: "/finance", icon: DollarSign, color: "text-purple-400", bg: "bg-purple-500" }] : []),
-	...(['admin', 'pathologist', 'doctor'].includes(userRole) ? [{ name: t("Medical Labs"), path: "/pathology", icon: Microscope, color: "text-pink-400", bg: "bg-pink-500" }] : []),
-	...(['admin', 'radiologist', 'doctor'].includes(userRole) ? [{ name: t("Radiography"), path: "/radiology", icon: Activity, color: "text-purple-400", bg: "bg-purple-500" }] : []),
+	...(['admin', 'super_admin'].includes(userRole) ? [{ name: t("Admin Console"), path: "/admin", icon: LayoutDashboard, color: "text-indigo-400", bg: "bg-indigo-500" }] : []),
+	...(['admin', 'receptionist', 'super_admin'].includes(userRole) ? [{ name: t("Front Desk"), path: "/reception", icon: Users, color: "text-emerald-400", bg: "bg-emerald-500" }] : []),
+	...(['admin', 'nurse', 'super_admin'].includes(userRole) ? [{ name: t("Nurse Station"), path: "/nurse", icon: HeartPulse, color: "text-blue-400", bg: "bg-blue-500" }] : []),
+	...(['admin', 'doctor', 'super_admin'].includes(userRole) ? [{ name: t("Doctor Workspace"), path: "/doctor", icon: Stethoscope, color: "text-indigo-400", bg: "bg-indigo-500" }] : []),
+	...(['admin', 'chemist', 'super_admin'].includes(userRole) ? [{ name: t("Pharmacy Unit"), path: "/chemist", icon: FlaskConical, color: "text-amber-400", bg: "bg-amber-500" }] : []),
+	...(['admin', 'doctor', 'nurse', 'super_admin'].includes(userRole) ? [{ name: t("Operations OR"), path: "/operations", icon: Activity, color: "text-red-400", bg: "bg-red-500" }] : []),
+	...(['admin', 'doctor', 'nurse', 'receptionist', 'super_admin'].includes(userRole) ? [{ name: t("Blood Bank"), path: "/bloodbank", icon: Droplet, color: "text-rose-400", bg: "bg-rose-500" }] : []),
+	...(['admin', 'doctor', 'receptionist', 'nurse', 'super_admin'].includes(userRole) ? [{ name: t("Patient History"), path: "/history", icon: History, color: "text-slate-300", bg: "bg-slate-500" }] : []),
+	...(['admin', 'super_admin'].includes(userRole) ? [{ name: t("Human Resources"), path: "/hr", icon: Briefcase, color: "text-teal-400", bg: "bg-teal-500" }] : []),
+	...(['admin', 'super_admin'].includes(userRole) ? [{ name: t("Financial Controller"), path: "/finance", icon: DollarSign, color: "text-purple-400", bg: "bg-purple-500" }] : []),
+	...(['admin', 'pathologist', 'doctor', 'super_admin'].includes(userRole) ? [{ name: t("Medical Labs"), path: "/pathology", icon: Microscope, color: "text-pink-400", bg: "bg-pink-500" }] : []),
+	...(['admin', 'radiologist', 'doctor', 'super_admin'].includes(userRole) ? [{ name: t("Radiography"), path: "/radiology", icon: Activity, color: "text-purple-400", bg: "bg-purple-500" }] : []),
 	...(userRole === 'super_admin' ? [{ name: t("Network Control"), path: "/superadmin", icon: Network, color: "text-blue-400", bg: "bg-blue-500" }] : []),
   ];
 
   return (
-	
 	<div className="flex h-screen bg-slate-100 dark:bg-[#0a0a0a] text-slate-800 dark:text-slate-200 font-sans overflow-hidden transition-colors duration-300 p-4 gap-6">
 
 	  <aside className={`${isCollapsed ? 'w-24' : 'w-72'} bg-slate-800 dark:bg-slate-800/90 backdrop-blur-2xl text-slate-300 flex flex-col shrink-0 border border-slate-700/50 shadow-2xl transition-all duration-300 relative z-50 rounded-[2rem] overflow-hidden`}>
@@ -73,7 +73,6 @@ export default function AppLayout() {
 			{isCollapsed ? <ChevronRight className="w-4 h-4"/> : <ChevronLeft className="w-4 h-4"/>}
 		</button>
 
-		{/* LOGO AREA - Updated to "OPERIX Care" */}
 		<div className={`pt-8 pb-4 flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-6'} transition-all`}>
 		  <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
 			<ShieldPlus className="w-6 h-6 text-white" />
@@ -86,7 +85,6 @@ export default function AppLayout() {
 		  )}
 		</div>
 
-		{/* RESTORED PROFILE CARD - Left exactly as requested */}
 		<div className={`py-6 ${isCollapsed ? 'px-2' : 'px-6'} transition-all`}>
 		  <div className={`bg-slate-900/40 rounded-2xl border border-slate-700/50 overflow-hidden shadow-inner transition-all ${isCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
 			{isCollapsed ? (
@@ -128,7 +126,6 @@ export default function AppLayout() {
 		  })}
 		</nav>
 
-		{/* BOTTOM USER/SETTINGS AREA */}
 		<div className="p-3 bg-slate-900/30 border-t border-slate-700/50 space-y-2 backdrop-blur-md">
 		  
 		  <button 
@@ -160,7 +157,6 @@ export default function AppLayout() {
 		</div>
 	  </aside>
 
-	  {/* MAIN CONTENT AREA */}
 	  <main className="flex-1 overflow-y-auto bg-white dark:bg-[#0f0f11] rounded-[2rem] border border-slate-200 dark:border-slate-800/60 shadow-sm relative transition-colors duration-300">
 		<Outlet /> 
 	  </main>
