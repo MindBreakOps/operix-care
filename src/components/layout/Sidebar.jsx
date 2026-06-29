@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext'; 
+import { supabase } from '../../config/supabaseClient'; // Make sure this path is correct
 import { 
   LayoutDashboard, Users, Activity, Stethoscope, 
   Scissors, FlaskConical, CreditCard, FileText, 
-  LogOut, Menu, X, ShieldPlus, Globe, ChevronLeft, ChevronRight, User
+  LogOut, Menu, X, ShieldPlus, Globe, ChevronLeft, ChevronRight, User, Briefcase
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -15,7 +16,26 @@ export default function Sidebar() {
   
   const [isOpen, setIsOpen] = useState(false); 
   const [isCollapsed, setIsCollapsed] = useState(false); 
+  const [workspaceFlags, setWorkspaceFlags] = useState({ hr: false, finance: false });
 
+  // Fetch the workspace flags to determine which premium modules to show
+  useEffect(() => {
+	const fetchWorkspaceFlags = async () => {
+	  if (!user || role === 'super_admin') return;
+	  try {
+		const { data: profile } = await supabase.from('profiles').select('workspace_id').eq('id', user.id).single();
+		if (profile?.workspace_id) {
+		  const { data: ws } = await supabase.from('workspaces').select('has_hr_board, has_finance_board').eq('id', profile.workspace_id).single();
+		  setWorkspaceFlags({ hr: ws?.has_hr_board, finance: ws?.has_finance_board });
+		}
+	  } catch (error) {
+		console.error("Error fetching workspace limits:", error);
+	  }
+	};
+	fetchWorkspaceFlags();
+  }, [user, role]);
+
+  // Master Navigation List with Feature Flags
   const NAV_LINKS = [
 	{ name: t('Front Desk'), path: '/reception', icon: Users, roles: ['admin', 'receptionist'], color: 'text-emerald-500' },
 	{ name: t('Triage & Vitals'), path: '/nurse', icon: Activity, roles: ['admin', 'nurse'], color: 'text-blue-500' },
@@ -23,10 +43,18 @@ export default function Sidebar() {
 	{ name: t('Surgical Board'), path: '/operations', icon: Scissors, roles: ['admin', 'doctor', 'nurse'], color: 'text-red-500' },
 	{ name: t('Dispensary'), path: '/chemist', icon: FlaskConical, roles: ['admin', 'chemist'], color: 'text-amber-500' },
 	{ name: t('Unified Timeline'), path: '/history', icon: FileText, roles: ['admin', 'doctor', 'nurse', 'receptionist'], color: 'text-slate-400' },
-	{ name: t('Corporate Treasury'), path: '/finance', icon: CreditCard, roles: ['admin', 'finance'], color: 'text-purple-500' }
+	// Premium Modules (Protected by requiredFeature string)
+	{ name: t('Corporate Treasury'), path: '/finance', icon: CreditCard, roles: ['admin', 'finance'], color: 'text-purple-500', requiredFeature: 'finance' },
+	{ name: t('Human Resources'), path: '/hr', icon: Briefcase, roles: ['admin', 'hr'], color: 'text-pink-500', requiredFeature: 'hr' }
   ];
 
-  const filteredLinks = NAV_LINKS.filter(link => link.roles.includes(role));
+  // Strictly filter links based on Role AND Workspace Entitlements
+  const filteredLinks = NAV_LINKS.filter(link => {
+	if (!link.roles.includes(role) && role !== 'super_admin') return false;
+	if (link.requiredFeature === 'finance' && !workspaceFlags.finance && role !== 'super_admin') return false;
+	if (link.requiredFeature === 'hr' && !workspaceFlags.hr && role !== 'super_admin') return false;
+	return true;
+  });
 
   const handleLogout = async () => {
 	try { await signOut(); } catch (error) { console.error("Error logging out:", error.message); }

@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { supabase } from './config/supabaseClient'; // Ensure path is correct
 
 // Import Layout & Pages
 import AppLayout from './components/layout/AppLayout';
@@ -29,12 +31,39 @@ import HumanResources from './pages/hr/HumanResources';
 import FinanceDashboard from './pages/finance/FinanceDashboard';
 import Settings from './pages/settings/Settings';
 
-// Route Protector
-const ProtectedRoute = ({ children, allowedRoles }) => {
+// Upgraded Route Protector with Enterprise Feature Flag Checking
+const ProtectedRoute = ({ children, allowedRoles, requiredFeature }) => {
   const { user, role, loading } = useAuth();
   const { t } = useLanguage(); 
+  const [featureAllowed, setFeatureAllowed] = useState(null);
+
+  useEffect(() => {
+    const verifyWorkspaceEntitlements = async () => {
+      // Super admins bypass all feature locks, and routes with no requiredFeature auto-pass
+      if (!requiredFeature || role === 'super_admin') {
+        setFeatureAllowed(true);
+        return;
+      }
+      try {
+        const { data: profile } = await supabase.from('profiles').select('workspace_id').eq('id', user.id).single();
+        if (profile?.workspace_id) {
+          const { data: ws } = await supabase.from('workspaces').select(requiredFeature).eq('id', profile.workspace_id).single();
+          setFeatureAllowed(ws?.[requiredFeature] === true);
+        } else {
+          setFeatureAllowed(false);
+        }
+      } catch (error) {
+        console.error("Entitlement verification failed:", error);
+        setFeatureAllowed(false);
+      }
+    };
+
+    if (user && !loading) {
+      verifyWorkspaceEntitlements();
+    }
+  }, [user, loading, requiredFeature, role]);
   
-  if (loading) return (
+  if (loading || (requiredFeature && featureAllowed === null)) return (
     <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
@@ -42,6 +71,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/unauthorized" replace />;
+  if (requiredFeature && !featureAllowed) return <Navigate to="/unauthorized" replace />;
   
   return children;
 };
@@ -74,10 +104,10 @@ function AppRoutes() {
 
       {/* PROTECTED HOSPITAL WORKFLOWS */}
       <Route element={<AppLayout />}>
-        {/* SAAS CONTROL PLANE (Only accessible by super_admin) */}
+        {/* SAAS CONTROL PLANE */}
         <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminPortal /></ProtectedRoute>} />
         
-        {/* FIXED: Allowed super_admin to navigate here too if they need to check data */}
+        {/* CLINICAL CORE MODULES */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/reception" element={<ProtectedRoute allowedRoles={['receptionist', 'admin', 'super_admin']}><ReceptionPortal /></ProtectedRoute>} />
         <Route path="/nurse" element={<ProtectedRoute allowedRoles={['nurse', 'admin', 'super_admin']}><NursePortal /></ProtectedRoute>} />
@@ -85,8 +115,11 @@ function AppRoutes() {
         <Route path="/chemist" element={<ProtectedRoute allowedRoles={['chemist', 'admin', 'super_admin']}><ChemistPortal /></ProtectedRoute>} />
         <Route path="/operations" element={<ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse', 'super_admin']}><OperationsBoard /></ProtectedRoute>} />
         <Route path="/bloodbank" element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'receptionist', 'super_admin']}><BloodBank /></ProtectedRoute>} />
-        <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']}><HumanResources /></ProtectedRoute>} />
-        <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']}><FinanceDashboard /></ProtectedRoute>} />
+        
+        {/* PREMIUM ENTERPRISE MODULES (Protected by Feature Flags) */}
+        <Route path="/hr" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']} requiredFeature="has_hr_board"><HumanResources /></ProtectedRoute>} />
+        <Route path="/finance" element={<ProtectedRoute allowedRoles={['admin', 'super_admin']} requiredFeature="has_finance_board"><FinanceDashboard /></ProtectedRoute>} />
+        
         <Route path="/pathology" element={<DiagnosticLab labTypeOverride="Pathology" />} />
         <Route path="/radiology" element={<DiagnosticLab labTypeOverride="Radiology" />} />
         
